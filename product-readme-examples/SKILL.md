@@ -61,6 +61,16 @@ Do not use this skill when:
 - Avoid throwing/raising in examples unless the example is specifically about
   error handling.
 
+## Nim Example Clarity Rules
+
+- Prefer plain, direct flow over extra abstraction.
+- Keep flow linear when possible: setup -> request -> parse -> output.
+- If a value is used once and inlining is clearer, inline it.
+- Avoid one-off constants/helpers that do not improve readability.
+- Keep comments short and only for non-obvious steps.
+- Favor explicit parse checks over hidden fallback defaults.
+- Do not add debug/noise output in final examples unless requested.
+
 ## Copy Guidance
 
 - Use direct language: "why this is better", "what feels different".

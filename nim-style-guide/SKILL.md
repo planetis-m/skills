@@ -384,3 +384,60 @@ var attempts = 0
 - Are helper procs capturing mutable outer locals?
 - Are error catches located at actionable boundaries?
 - Did this change introduce dead code or dead exports?
+
+
+## 9. Accessor Correctness
+
+### Rules
+
+- Treat accessor contracts as strict: invalid index and missing required data should raise `ValueError`.
+- Route accessor errors through one shared helper proc marked `{.noinline, noreturn.}` for consistent behavior.
+- Use `lent T` for read accessors that borrow from object fields.
+- Add `var T` accessor overloads only for mutable reference-like results (for example `string`, `seq[...]`) when mutation is part of the API.
+- Do not add `var` overloads for simple scalar outputs (`int`, `float`, `bool`, enums).
+- In `lent`/`var` accessors, prefer direct indexing from the owner object; avoid temporary locals that can trigger escaping-borrow issues.
+- For bool-return parse helpers, catch `CatchableError` once at the helper boundary and return `false`.
+
+### Do
+
+```nim
+proc raiseAccessorValueError(message: string) {.noinline, noreturn.} =
+  raise newException(ValueError, message)
+
+proc firstCallId*(x: ChatCreateResult; i = 0): lent string {.inline.} =
+  ensureChoiceIndex(x.choices.len, i)
+  if x.choices[i].message.tool_calls.len == 0:
+    raiseNoToolCallsAtChoice(i)
+  result = x.choices[i].message.tool_calls[0].id
+
+proc firstCallId*(x: var ChatCreateResult; i = 0): var string {.inline.} =
+  ensureChoiceIndex(x.choices.len, i)
+  if x.choices[i].message.tool_calls.len == 0:
+    raiseNoToolCallsAtChoice(i)
+  result = x.choices[i].message.tool_calls[0].id
+```
+
+```nim
+proc parseFirstCallArgs*[T](x: ChatCreateResult; dst: var T; i = 0): bool =
+  result = false
+  try:
+    dst = fromJson(x.firstCallArgs(i), T)
+    result = true
+  except CatchableError:
+    result = false
+```
+
+### Don't
+
+```nim
+proc firstCallId*(x: ChatCreateResult; i = 0): string =
+  result = ""
+  if x.hasToolCalls(i):
+    result = x.choices[i].message.tool_calls[0].id
+```
+
+```nim
+proc firstText*(x: ChatCreateResult; i = 0): lent string =
+  let content = x.choices[i].message.content
+  result = content.text
+```
