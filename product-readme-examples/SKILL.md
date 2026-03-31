@@ -79,6 +79,7 @@ Do not use this skill when:
   - ergonomics (clean constructors/accessors)
   - typing/performance (direct object mapping)
 - Keep bullet points punchy and concrete.
+- In feature lists ("It gives you", "Why try this?"), write one clear benefit per bullet in plain language, and optionally anchor it with concrete API names in parentheses.
 
 ## Minimal Research Workflow
 

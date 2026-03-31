@@ -1,0 +1,4 @@
+interface:
+  display_name: "Nim Destructors"
+  short_description: "Review Nim destructor and move-hook code"
+  default_prompt: "Use $nim-destructors to review or implement Nim ARC/ORC destructor hooks and move semantics."
