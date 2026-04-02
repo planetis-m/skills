@@ -46,8 +46,8 @@ Split modules by library domain and keep raw bindings isolated from idiomatic wr
 
 - Keep wrappers minimal: remove unused APIs, fields, and helpers so the binding reflects only what the project needs.
 - Prefer `incompleteStruct` for C structs and list only the fields you actually use. This reduces ABI risk and keeps bindings aligned with real usage.
-- Avoid stateful “isOpen/used” flags on stack objects with destructors: stack addresses are not stable and destructor timing is too implicit for multi‑step C workflows.
-- When a resource has a strict init/write/finish sequence, prefer single‑call convenience wrappers (or explicit `try/finally` blocks) over stateful objects.
+- Only wrap a real C handle as an owning object. If the C API does not return a handle, do not invent per-instance ownership.
+- For explicit init/use/finish workflows, avoid wrapper objects that track progress in mutable state; use helpers or explicit `try/finally`.
 - Prefer exceptions in the ergonomic layer over manual result wrappers that only carry `ok`/`kind`/`message`.
 - Do not introduce custom exception types unless a caller genuinely handles that type differently.
 - Catch low-level errors only at meaningful boundaries:
@@ -103,6 +103,8 @@ proc runPage(doc: PdfDocument; page: int) =
 - `cdecl`: default C calling convention (use `stdcall` or others if C library requires).
 - `header`: specify header for C compilation (static linking scenarios).
 - `dynlib`: resolve symbols from a shared library at runtime.
+- When many raw declarations share the same calling convention and header, prefer a scoped pragma block:
+  `{.push callconv: cdecl, header: "foo.h".}` ... declarations ... `{.pop.}`
 
 **Static vs dynamic linking:**
 
