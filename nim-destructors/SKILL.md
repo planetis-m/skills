@@ -36,13 +36,15 @@ Do not force one ownership model onto another. A shared handle should not become
 These are the relevant hook shapes:
 
 ```nim
-proc `=destroy`(x: T)
-proc `=wasMoved`(x: var T)
-proc `=sink`(dest: var T; src: T)
-proc `=copy`(dest: var T; src: T)
-proc `=dup`(src: T): T
-proc `=trace`(x: var T; env: pointer)
+proc `=destroy`*(x: T)
+proc `=wasMoved`*(x: var T)
+proc `=sink`*(dest: var T; src: T)
+proc `=copy`*(dest: var T; src: T)
+proc `=dup`*(src: T): T
+proc `=trace`*(x: var T; env: pointer)
 ```
+
+Export custom ownership hooks. In this codebase, destructors must be exported. Treat missing export on a custom hook as a bug.
 
 Use `=trace` only for ORC-aware manually allocated containers that can participate in cycles.
 
@@ -59,7 +61,7 @@ Use `=trace` only for ORC-aware manually allocated containers that can participa
 Canonical shape:
 
 ```nim
-proc `=destroy`(x: T) =
+proc `=destroy`*(x: T) =
   if x.data != nil:
     for i in 0..<x.len:
       `=destroy`(x.data[i])
@@ -74,7 +76,7 @@ proc `=destroy`(x: T) =
 Canonical shape:
 
 ```nim
-proc `=wasMoved`(x: var T) =
+proc `=wasMoved`*(x: var T) =
   x.data = nil
 ```
 
@@ -89,7 +91,7 @@ proc `=wasMoved`(x: var T) =
 Canonical shape:
 
 ```nim
-proc `=sink`(dest: var T; src: T) =
+proc `=sink`*(dest: var T; src: T) =
   `=destroy`(dest)
   dest.len = src.len
   dest.cap = src.cap
@@ -107,7 +109,7 @@ If the destination has fields that are not fully overwritten after `=destroy`, r
 Canonical deep-copy shape:
 
 ```nim
-proc `=copy`(dest: var T; src: T) =
+proc `=copy`*(dest: var T; src: T) =
   if dest.data != src.data:
     `=destroy`(dest)
     `=wasMoved`(dest)
@@ -122,7 +124,7 @@ proc `=copy`(dest: var T; src: T) =
 Move-only form:
 
 ```nim
-proc `=copy`(dest: var T; src: T) {.error.}
+proc `=copy`*(dest: var T; src: T) {.error.}
 ```
 
 ### `=dup`
@@ -135,7 +137,7 @@ proc `=copy`(dest: var T; src: T) {.error.}
 Canonical deep-dup shape:
 
 ```nim
-proc `=dup`(src: T): T {.nodestroy.} =
+proc `=dup`*(src: T): T {.nodestroy.} =
   result = T(len: src.len, cap: src.cap, data: nil)
   if src.data != nil:
     result.data = cast[typeof(result.data)](alloc(result.cap * sizeof(Elem)))
@@ -154,7 +156,7 @@ Add `=trace` only when all of these are true:
 Canonical shape:
 
 ```nim
-proc `=trace`(x: var T; env: pointer) =
+proc `=trace`*(x: var T; env: pointer) =
   if x.data != nil:
     for i in 0..<x.len:
       `=trace`(x.data[i], env)
