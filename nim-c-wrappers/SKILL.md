@@ -42,7 +42,7 @@ Split modules by library domain and keep raw bindings isolated from idiomatic wr
 
 ---
 
-## 3. Wrapper Lessons (Grounded in Repo History)
+## 3. Wrapper Lessons
 
 - Keep wrappers minimal: remove unused APIs, fields, and helpers so the binding reflects only what the project needs.
 - Prefer `incompleteStruct` for C structs and list only the fields you actually use. This reduces ABI risk and keeps bindings aligned with real usage.
