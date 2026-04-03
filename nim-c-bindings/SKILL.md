@@ -1,9 +1,9 @@
 ---
-name: bindings
+name: nim-c-bindings
 description: Operational rules for reliable Nim to C bindings across Linux, macOS, and Windows.
 ---
 
-# Nim ↔ C Bindings — Operational Rules
+# Nim C Bindings
 
 ## Scope
 - This is a prescriptive rulebook for building Nim bindings to C libraries across Linux, macOS, and Windows.

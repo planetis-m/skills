@@ -4,21 +4,23 @@ This repository tracks custom Codex agent skills.
 
 ## Skills in this repo
 
-- `bindings`: Operational rules for reliable Nim-to-C bindings across Linux, macOS, and Windows.
+- `nim-c-bindings`: Operational rules for reliable Nim-to-C bindings across Linux, macOS, and Windows.
+- `nim-ownership-hooks`: Nim ARC/ORC ownership hooks and move semantics guidance.
 - `nim-style-guide`: Strict Nim style and control-flow conventions.
 - `product-readme-examples`: Guidance for user-facing README and example writing.
-- `update-api-docs`: Workflow to generate markdown API docs from Nim modules.
-- `wrapper`: Guidelines for building idiomatic Nim wrappers on top of C FFI bindings.
+- `nim-api-docs`: Workflow to generate markdown API docs from Nim modules.
+- `nim-c-wrappers`: Guidelines for building idiomatic Nim wrappers on top of C FFI bindings.
 
 Each skill is a folder with a `SKILL.md` file:
 
 ```text
 skills-repo/
-  bindings/SKILL.md
+  nim-c-bindings/SKILL.md
+  nim-ownership-hooks/SKILL.md
   nim-style-guide/SKILL.md
   product-readme-examples/SKILL.md
-  update-api-docs/SKILL.md
-  wrapper/SKILL.md
+  nim-api-docs/SKILL.md
+  nim-c-wrappers/SKILL.md
 ```
 
 ## Where skills should live
@@ -42,7 +44,7 @@ Keep this repository anywhere (for example `~/src/skills`) and symlink the skill
 mkdir -p ~/.agents/skills
 
 # from this repo root
-for d in bindings nim-style-guide product-readme-examples update-api-docs wrapper; do
+for d in nim-c-bindings nim-ownership-hooks nim-style-guide product-readme-examples nim-api-docs nim-c-wrappers; do
   ln -sfn "$(pwd)/$d" "$HOME/.agents/skills/$d"
 done
 ```
@@ -54,7 +56,7 @@ PROJECT=/path/to/your/project
 mkdir -p "$PROJECT/.agents/skills"
 
 # from this repo root
-for d in bindings nim-style-guide product-readme-examples update-api-docs wrapper; do
+for d in nim-c-bindings nim-ownership-hooks nim-style-guide product-readme-examples nim-api-docs nim-c-wrappers; do
   ln -sfn "$(pwd)/$d" "$PROJECT/.agents/skills/$d"
 done
 ```

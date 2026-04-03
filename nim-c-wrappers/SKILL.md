@@ -1,9 +1,9 @@
 ---
-name: wrapper
+name: nim-c-wrappers
 description: Guidelines for building idiomatic Nim wrappers on top of C FFI bindings.
 ---
 
-# C→Nim Manual Wrapping Skills
+# Nim C Wrappers
 
 ## 1. Purpose
 A C→Nim wrapper exposes a C library to Nim while preserving ABI correctness and offering an idiomatic Nim API. The goals are:

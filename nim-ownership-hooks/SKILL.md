@@ -1,9 +1,9 @@
 ---
-name: nim-destructors
+name: nim-ownership-hooks
 description: Design, review, and implement Nim ARC/ORC ownership hooks and move semantics for value types, containers, shared handles, and manually allocated storage. Use when Codex works on `=destroy`, `=wasMoved`, `=sink`, `=copy`, `=dup`, `=trace`, `sink` parameters, `lent` accessors, or ARC/ORC ownership bugs and warnings in Nim code.
 ---
 
-# Nim Destructors and Move Semantics
+# Nim Ownership Hooks and Move Semantics
 
 Use this skill when editing or reviewing Nim ownership hooks under ARC/ORC.
 Start by classifying the type's ownership model, then implement only the hook set that model actually needs, while preserving the codebase's local style.

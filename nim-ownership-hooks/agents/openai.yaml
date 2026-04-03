@@ -1,0 +1,4 @@
+interface:
+  display_name: "Nim Ownership Hooks"
+  short_description: "Review Nim ARC/ORC ownership-hook and move-semantics code"
+  default_prompt: "Use $nim-ownership-hooks to review or implement Nim ARC/ORC ownership hooks and move semantics."
