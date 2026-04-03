@@ -13,7 +13,7 @@ Each skill lives in its own folder and includes a `SKILL.md` file.
 - `nim-error-handling`: Nim exception, propagation, and failure-boundary guidance.
 - `nim-code-organization`: Nim module hygiene, orchestration structure, and export-surface guidance.
 - `product-readme-examples`: Guidance for user-facing README and example writing.
-- `nim-api-docs`: Workflow to generate markdown API docs from Nim modules.
+- `nim-doc-comments`: Nim doc comment placement, writing, and `nim doc` verification guidance.
 - `nim-c-wrappers`: Guidelines for building idiomatic Nim wrappers on top of C FFI bindings.
 
 ## Repository conventions
@@ -37,7 +37,7 @@ skills-repo/
   nim-error-handling/SKILL.md
   nim-code-organization/SKILL.md
   product-readme-examples/SKILL.md
-  nim-api-docs/SKILL.md
+  nim-doc-comments/SKILL.md
   nim-c-wrappers/SKILL.md
 ```
 
@@ -62,7 +62,7 @@ Keep this repository anywhere (for example `~/src/skills`) and symlink the skill
 mkdir -p ~/.agents/skills
 
 # from this repo root
-for d in nim-c-bindings nim-ownership-hooks nim-style-guide nim-api-design nim-error-handling nim-code-organization product-readme-examples nim-api-docs nim-c-wrappers; do
+for d in nim-c-bindings nim-ownership-hooks nim-style-guide nim-api-design nim-error-handling nim-code-organization product-readme-examples nim-doc-comments nim-c-wrappers; do
   ln -sfn "$(pwd)/$d" "$HOME/.agents/skills/$d"
 done
 ```
@@ -74,7 +74,7 @@ PROJECT=/path/to/your/project
 mkdir -p "$PROJECT/.agents/skills"
 
 # from this repo root
-for d in nim-c-bindings nim-ownership-hooks nim-style-guide nim-api-design nim-error-handling nim-code-organization product-readme-examples nim-api-docs nim-c-wrappers; do
+for d in nim-c-bindings nim-ownership-hooks nim-style-guide nim-api-design nim-error-handling nim-code-organization product-readme-examples nim-doc-comments nim-c-wrappers; do
   ln -sfn "$(pwd)/$d" "$PROJECT/.agents/skills/$d"
 done
 ```
