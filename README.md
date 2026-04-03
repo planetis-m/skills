@@ -1,8 +1,10 @@
 # Agent Skills Repo
 
-This repository tracks custom Codex agent skills.
+This repository contains custom Codex skills.
 
-## Skills in this repo
+Each skill lives in its own folder and includes a `SKILL.md` file.
+
+## Current skills
 
 - `nim-c-bindings`: Operational rules for reliable Nim-to-C bindings across Linux, macOS, and Windows.
 - `nim-ownership-hooks`: Nim ARC/ORC ownership hooks and move semantics guidance.
@@ -11,7 +13,17 @@ This repository tracks custom Codex agent skills.
 - `nim-api-docs`: Workflow to generate markdown API docs from Nim modules.
 - `nim-c-wrappers`: Guidelines for building idiomatic Nim wrappers on top of C FFI bindings.
 
-Each skill is a folder with a `SKILL.md` file:
+## Repository conventions
+
+Skill names in this repository use these conventions:
+
+- Use lowercase kebab-case only.
+- Prefer short, descriptive names over generic nouns.
+- Namespace Nim-specific skills with `nim-` when it improves clarity.
+- Use plural forms for broad guidance areas when the skill covers a category rather than one artifact.
+- Keep the skill folder name and the `name:` value in `SKILL.md` identical.
+
+## Layout
 
 ```text
 skills-repo/
@@ -23,7 +35,7 @@ skills-repo/
   nim-c-wrappers/SKILL.md
 ```
 
-## Where skills should live
+## Where to install skills
 
 Codex loads skills from these scopes:
 
@@ -32,7 +44,7 @@ Codex loads skills from these scopes:
 - Admin scope: `/etc/codex/skills`
 - System scope: bundled with Codex (for example `skill-creator`, `skill-installer`)
 
-For your question: use `~/.agents/skills` for personal skills across all repos, and `<project>/.agents/skills` when a skill should apply only to one codebase.
+Use `~/.agents/skills` for personal skills across repositories, and `<project>/.agents/skills` when a skill should apply only to one codebase.
 
 ## Recommended setup for this git repo
 
