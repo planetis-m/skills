@@ -1,43 +1,42 @@
 ---
 name: nimonyplugins
-description: Write Nimony plugins against `src/nimony/lib/nimonyplugins.nim` using the codebase's actual `Cursor`/`TokenBuf` idioms, with correct `Tree`/`Node` mental models, traversal patterns, and construction workflows.
+description: Write correct Nimony plugins against the actual installed `nimonyplugins.nim` API, with clear `Tree`/`Node` usage and safe traversal and construction patterns.
 ---
 
 # Nimony Plugins
 
-Use this skill when writing or reviewing plugins built on `src/nimony/lib/nimonyplugins.nim`.
+Use this skill when writing or reviewing plugins built on `nimonyplugins`.
 
-This skill is grounded in the Nimony frontend code under `src/nimony/*.nim`. It does not describe hypothetical plugin styles. It describes the patterns that the compiler itself uses with raw `TokenBuf` and `Cursor`, then maps those patterns to the plugin-facing `Tree` and `Node` API.
+## First Step
+
+Find the actual `nimonyplugins.nim` that the current project will import.
+
+- Prefer the installed copy, not a random checkout.
+- Use `rg --files | rg '(^|/)nimonyplugins\.nim$'`.
+- If there are multiple copies, read the one on the active import path and follow that file exactly.
 
 ## Mental Model
 
 Treat the plugin API like this:
 
-- `Tree` is the plugin-facing analogue of `TokenBuf`.
-- `Node` is the plugin-facing analogue of `Cursor`.
+- `Tree` is the mutable builder you write into.
+- `Node` is the read handle you traverse.
 
-That is only a mental model, not an exact type alias.
-
-What the code actually shows:
-
-- Raw compiler code uses plain `TokenBuf` as mutable storage and `Cursor` as borrowed read positions.
-- Plugin code uses `Tree` and `Node`, which add ownership and validation semantics on top.
+If you already know the lower-level NIF APIs, `Tree` is close to a managed `TokenBuf` and `Node` is close to a managed `Cursor`. That is only a mental model, not a type alias.
 
 Important API differences:
 
 - `Tree` is copy-on-write.
-  Evidence: `Tree` stores shared payload plus a refcount-like `counter`, and every mutator goes through `prepareMutation`.
-- `Node` is an owned read handle, not just a naked position.
+  Evidence: every mutator goes through `prepareMutation`.
+- `Node` is an owned read handle.
   Evidence: `snapshot(tree)` starts `beginRead`; `Node` destruction calls `endRead`; `Node` copies use `shareRead`.
 - `snapshot(tree)` requires a non-empty tree.
-  Evidence: it asserts `not tree.isEmpty`.
 - Constructed plugin trees are validated.
-  Evidence: `validateConstructedTree` and `validateConstructedNode` are called by the construction helpers.
 
-The safe rule is:
+Safe rule:
 
-- Think of `Tree` as an owned mutable builder.
-- Think of `Node` as an owned read cursor into a stable snapshot.
+- Think of `Tree` as owned mutable output.
+- Think of `Node` as a stable read cursor into a snapshot.
 
 ## Core API Roles
 
@@ -54,27 +53,11 @@ Use these operations as the main vocabulary:
 - `errorTree(...)`: emit an `ErrT` tree with source attachment when available.
 - `saveTree(...)`: write final NIF output.
 
-## Mapping From Compiler Idioms
-
-The compiler repeatedly uses these raw patterns:
-
-- Borrowed destructive traversal with `var Cursor`.
-- Copying whole subtrees with `takeTree` and non-consuming copies with `addSubtree`.
-- Building a temporary `TokenBuf`, then rereading it with `beginRead` or `cursorAt`.
-- Holding a backing buffer alive for as long as any derived cursor is needed.
-
-The plugin API maps to them like this:
-
-- Raw `Cursor` traversal maps to moving a `var Node`.
-- Raw `TokenBuf` construction maps to mutating a `Tree`.
-- Raw reread patterns map to building a `Tree` and then calling `snapshot`.
-- Raw manual `beginRead`/`endRead` balancing is replaced by `Node` ownership.
-
 ## Canonical Read Patterns
 
 ### 1. Treat traversal as destructive by default
 
-The compiler nearly always walks a `var Cursor` forward and does not try to keep it immutable. Plugin code should do the same with `var Node`.
+Treat traversal as moving a `var Node` forward. Do not design around immutable walkers unless you actually need them.
 
 Use:
 
@@ -87,20 +70,19 @@ Recommended shape:
 ```nim
 var n = input
 if n.exprKind == CallX:
-  inc n         # step into children
+  inc n  # step into children
   # inspect children here
 else:
-  skip n        # consume whole subtree you do not handle
+  skip n # consume whole subtree you do not handle
 ```
 
-Why this is idiomatic:
+Why this works:
 
-- Compiler transforms such as `deferstmts.nim` are written as single-pass cursor consumers.
-- The plugin API makes the same pattern explicit with `inc` and `skip`.
+- The plugin API is explicit about token-level stepping versus subtree-level stepping.
 
 ### 2. Clone readers for lookahead
 
-Raw compiler code often copies a cursor before probing shape, because a cursor is just a position. Do the same with `Node`: copy it when you want lookahead without committing to movement on the original.
+Copy `Node` when you want lookahead without committing to movement on the original.
 
 Recommended shape:
 
@@ -111,10 +93,9 @@ if probe.kind == Symbol:
   # commit later if wanted
 ```
 
-Why this is idiomatic:
+Why this works:
 
-- Many compiler helpers probe by copying `Cursor` values, then advancing the copy.
-- `Node` copies are supported explicitly and share the underlying read state safely.
+- `Node` copies keep the original traversal state intact.
 
 ### 3. Distinguish token stepping from subtree stepping
 
@@ -125,13 +106,13 @@ Use:
 - `inc(node)` for atom-by-atom stepping.
 - `skip(node)` for structural stepping.
 
-This matters because the underlying representation is flat tokens, not heap-linked AST nodes.
+This matters because the representation is token-based, not heap-linked nodes.
 
 ## Canonical Write Patterns
 
 ### 1. Prefer structured emission
 
-The compiler overwhelmingly emits trees in this order:
+Emit trees in this order:
 
 1. Open tag
 2. Emit children
@@ -149,14 +130,12 @@ Use manual `addParLe` / `addParRi` only when conditional structure makes `withTr
 
 ### 2. Reuse existing subtrees whenever possible
 
-The compiler regularly preserves already-built structure instead of reconstructing it token-by-token.
+Preserve already-correct subtrees instead of reconstructing them token by token.
 
-In plugins:
+Use:
 
-- Use `takeTree(var node)` when consuming input into output.
-- Use `addSubtree(node)` when preserving input but leaving the reader in place.
-
-This is the most important operational distinction in the plugin API.
+- `takeTree(var node)` when consuming input into output.
+- `addSubtree(node)` when preserving input but leaving the reader in place.
 
 Rule of thumb:
 
@@ -165,7 +144,7 @@ Rule of thumb:
 
 ### 3. Build while consuming
 
-Compiler transforms commonly read from one tree and emit to another in lockstep. Mirror that style in plugins.
+Read from one tree and emit to another in lockstep when transforming structure.
 
 Recommended workflow:
 
@@ -176,16 +155,14 @@ var n = input
 outp.withTree(StmtsS, n.info):
   while n.kind != ParRi:
     if shouldRewrite(n):
-      emitRewrite(outp, n)  # consumes from n
+      emitRewrite(outp, n) # consumes from n
     else:
       outp.takeTree(n)
 ```
 
-This is the closest plugin equivalent to the compiler's `TokenBuf` + `Cursor` transformation style.
-
 ### 4. Snapshot after construction, not during mutation-heavy assembly
 
-The compiler often builds a temporary buffer completely, then rereads it. Follow the same staged approach in plugins:
+Build first, then reread:
 
 1. Build a `Tree`.
 2. Call `snapshot(tree)` when you need a reader.
@@ -195,10 +172,9 @@ Do not treat a mutable `Tree` itself as the thing you inspect. Treat it as backi
 
 ## Ownership And Lifecycle
 
-These rules are directly supported by the code:
+These rules matter:
 
-- A raw `Cursor` is only valid while its backing `TokenBuf` is alive.
-- A plugin `Node` keeps the backing tree alive for you.
+- `Node` keeps the backing tree alive for you.
 - Copying a `Tree` does not mean shared mutation; later writes detach.
 - Copying a `Node` creates another read handle to the same underlying tree snapshot.
 
@@ -206,11 +182,11 @@ Practical consequences:
 
 - Do not assume a copied `Tree` sees later mutations performed through another copy.
 - Do not snapshot an empty tree.
-- Do not manually reason as if `Node` were a plain integer offset; it has read-lifetime behavior attached.
+- Do not treat `Node` like a plain integer offset.
 
 ## Construction Contracts
 
-The plugin API validates constructed nodes. That means shape matters.
+The plugin API validates constructed nodes. Shape matters.
 
 Follow these rules:
 
@@ -237,9 +213,9 @@ proc rewriteCall(n: var Node): Tree =
       result.takeTree(n) # args
 ```
 
-Why this matches the codebase:
+Why this works:
 
-- The compiler's transforms commonly consume a reader while appending to a destination buffer.
+- It keeps the rewrite local and easy to reason about.
 
 ### Pattern: inspect without consuming
 
@@ -251,9 +227,9 @@ proc isSimpleIdent(n: Node): bool =
   result = probe.kind == Ident
 ```
 
-Why this matches the codebase:
+Why this works:
 
-- Cursor copies are routinely used for lookahead in the frontend.
+- It gives you lookahead without disturbing the main traversal state.
 
 ### Pattern: synthesize temporary structure, then reread it
 
@@ -267,17 +243,17 @@ tmp.withTree(TupleT, NoLineInfo):
 let tmpNode = snapshot(tmp)
 ```
 
-Why this matches the codebase:
+Why this works:
 
-- `typenav`, `expreval`, and `sem.nim` repeatedly build temporary buffers and then reopen them as cursors.
+- It lets later logic work against normal tree shape instead of ad hoc state.
 
 ### Pattern: preserve original source on errors
 
 Use `errorTree(msg, at)` or `errorTree(msg, at, orig)` rather than constructing a bare `ErrT` by hand.
 
-Why this matches the codebase:
+Why this works:
 
-- Both the compiler and plugin API preserve original source subtrees inside error nodes.
+- It keeps errors attached to the source that triggered them.
 
 ## Do
 
@@ -321,24 +297,25 @@ Prefer subtree-level operations unless single-token control is necessary.
 
 ### Rebuilding structure that the source tree already has
 
-The compiler codebase frequently preserves existing subtrees. Plugins should do the same because it is simpler and less error-prone.
+Preserve existing subtrees when they are already correct. It is simpler and less error-prone.
 
 ## Recommended Workflow
 
-1. Load input with `loadPluginInput`.
-2. Traverse with one primary `var Node`.
-3. Copy the node for lookahead when needed.
-4. Build output in a fresh `Tree`.
-5. Preserve existing structure with `takeTree` or `addSubtree` unless a rewrite is necessary.
-6. Use `errorTree` for invalid cases instead of ad hoc malformed output.
-7. Save the final tree with `saveTree`.
+1. Locate and read the actual installed `nimonyplugins.nim`.
+2. Load input with `loadPluginInput`.
+3. Traverse with one primary `var Node`.
+4. Copy the node for lookahead when needed.
+5. Build output in a fresh `Tree`.
+6. Preserve existing structure with `takeTree` or `addSubtree` unless a rewrite is necessary.
+7. Use `errorTree` for invalid cases instead of ad hoc malformed output.
+8. Save the final tree with `saveTree`.
 
 ## Minimal Working Style
 
 Use this style as the default plugin shape:
 
 ```nim
-import src/nimony/lib/nimonyplugins
+import nimonyplugins
 
 proc transform(input: Node): Tree =
   result = createTree()
@@ -353,5 +330,3 @@ proc transform(input: Node): Tree =
     else:
       result.takeTree(n)
 ```
-
-This is not a promise that every plugin should look exactly like this. It is the safest default because it matches the compiler's own proven `Cursor`/`TokenBuf` transformation style.
