@@ -70,10 +70,10 @@ Recommended shape:
 ```nim
 var n = input
 if n.exprKind == CallX:
-  inc n  # step into children
+  inc n
   # inspect children here
 else:
-  skip n # consume whole subtree you do not handle
+  skip n
 ```
 
 Why this works:
@@ -155,7 +155,7 @@ var n = input
 outp.withTree(StmtsS, n.info):
   while n.kind != ParRi:
     if shouldRewrite(n):
-      emitRewrite(outp, n) # consumes from n
+      emitRewrite(outp, n)
     else:
       outp.takeTree(n)
 ```
@@ -208,9 +208,9 @@ proc rewriteCall(n: var Node): Tree =
   let info = n.info
   result.withTree(CallX, info):
     inc n
-    result.takeTree(n)   # callee
+    result.takeTree(n)
     while n.kind != ParRi:
-      result.takeTree(n) # args
+      result.takeTree(n)
 ```
 
 Why this works:
@@ -267,6 +267,7 @@ Why this works:
 
 ## Don't
 
+- Do not document or code against a different checkout's API.
 - Do not assume `Tree` mutation is shared across copies.
 - Do not assume `Node` is just a raw cursor with no lifetime semantics.
 - Do not call `snapshot` on an empty tree.
@@ -312,21 +313,29 @@ Preserve existing subtrees when they are already correct. It is simpler and less
 
 ## Minimal Working Style
 
-Use this style as the default plugin shape:
+```nim
+template cliapp*(spec: string): untyped {.plugin: "smartcliplugin".}
+```
+
+Plugin entrypoint:
 
 ```nim
 import nimonyplugins
 
-proc transform(input: Node): Tree =
+proc generate(input: Node): Tree =
   result = createTree()
   var n = input
-  while n.kind != ParRi:
-    if n.exprKind == CallX:
-      result.withTree(CallX, n.info):
-        inc n
-        result.takeTree(n)
-        while n.kind != ParRi:
-          result.takeTree(n)
-    else:
+  let info = n.info
+  if n.stmtKind == StmtsS:
+    inc n
+
+  result.withTree(StmtsS, info):
+    result.withTree(CallS, info):
+      result.addIdent "echo"
       result.takeTree(n)
+    while n.kind != ParRi:
+      result.takeTree(n)
+
+let root = loadPluginInput()
+saveTree generate(root)
 ```
