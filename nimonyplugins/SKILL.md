@@ -9,11 +9,8 @@ Use this skill when writing or reviewing plugins built on `nimonyplugins`.
 
 ## First Step
 
-Find the actual `nimonyplugins.nim` that the current project will import.
-
-- Prefer the installed copy, not a random checkout.
-- Use `rg --files | rg '(^|/)nimonyplugins\.nim$'`.
-- If there are multiple copies, read the one on the active import path and follow that file exactly.
+Open the `nimonyplugins.nim` that the plugin actually imports.
+If multiple copies exist, resolve it with `nim c --listFullPaths your_plugin.nim`.
 
 ## Mental Model
 
@@ -22,14 +19,10 @@ Treat the plugin API like this:
 - `Tree` is the mutable builder you write into.
 - `Node` is the read handle you traverse.
 
-If you already know the lower-level NIF APIs, `Tree` is close to a managed `TokenBuf` and `Node` is close to a managed `Cursor`. That is only a mental model, not a type alias.
-
 Important API differences:
 
 - `Tree` is copy-on-write.
-  Evidence: every mutator goes through `prepareMutation`.
 - `Node` is an owned read handle.
-  Evidence: `snapshot(tree)` starts `beginRead`; `Node` destruction calls `endRead`; `Node` copies use `shareRead`.
 - `snapshot(tree)` requires a non-empty tree.
 - Constructed plugin trees are validated.
 
@@ -42,16 +35,44 @@ Safe rule:
 
 Use these operations as the main vocabulary:
 
-- `createTree()`: start a new mutable output tree.
-- `snapshot(tree)`: get a read handle for a finished or partially finished tree.
-- `withTree(kind, info): ...`: canonical structured emission.
-- `addParLe` / `addParRi`: manual structured emission when `withTree` is not enough.
-- `takeTree(var node)`: copy current token or subtree and advance the reader.
-- `addSubtree(node)`: copy current token or subtree without advancing the reader.
-- `inc(node)`: single-token advance.
-- `skip(node)`: skip current token, or whole subtree when at `ParLe`.
-- `errorTree(...)`: emit an `ErrT` tree with source attachment when available.
-- `saveTree(...)`: write final NIF output.
+- Tree creation:
+  `createTree()` starts empty output.
+  `createTree(kind; children...)` and `createTree(kind, info; children...)` build a validated node in one call.
+  `isEmpty(tree)` is the guard before `snapshot(tree)`.
+  `snapshot(tree)` gives you a readable `Node` at the start of the tree.
+  `withTree(kind, info): ...` is the normal way to emit a balanced node.
+- Node inspection:
+  `kind` and `info` tell you the raw token kind and source location.
+  `stmtKind`, `exprKind`, `typeKind`, `otherKind`, `pragmaKind` tell you which plugin-level node category you are looking at.
+  `tagId`, `tagText`, `tag` are for raw tag inspection when you need exact NIF shape.
+  `symId`, `symText`, `identText`, `stringValue`, `charLit`, `intValue`, `uintValue`, `floatValue` read the payload of the current token.
+  `eqIdent(name)` is the quick exact-name check for identifiers and symbols.
+- Traversal:
+  `inc(node)` advances one token.
+  `skip(node)` skips the whole current subtree, or the current token if it is atomic.
+- Tree construction:
+  `addParLe(tagId|string, info)` and `addParRi()` are the manual open/close primitives.
+  `takeTree(t, var node)` copies the current subtree and advances the reader.
+  `addSubtree(t, node)` copies the current subtree without advancing the reader.
+  `add(t, childTree)` appends another whole `Tree`.
+  `addDotToken()` emits `.`.
+  `addStrLit`, `addIntLit`, `addUIntLit`, `addIdent`, `addCharLit`, `addFloatLit` emit literal or identifier atoms.
+  `addSymUse(symId|string, info)` emits a symbol-use token.
+  `addEmptyNode`, `addEmptyNode2`, `addEmptyNode3`, `addEmptyNode4` emit one to four `.` placeholders when a node shape requires empty children.
+- IO and rendering:
+  `loadPluginInput()` reads `paramStr(1)` by default and returns the input root as `Node`.
+  `saveTree(tree)` writes to `paramStr(2)` by default.
+  `saveTree(tree, filename)` writes explicit output.
+  `renderTree(tree)` renders raw NIF text for debugging.
+  `renderNode(node)` renders the current subtree for debugging.
+- Line info:
+  `isValid(info)` checks whether source info exists.
+  `filePath(info)` returns the source path.
+  `lineCol(info)` returns decoded line and column.
+- Error construction:
+  `errorTree(msg)` builds a synthetic error node.
+  `errorTree(msg, at)` uses `at` for source location and origin.
+  `errorTree(msg, at, orig)` uses `at` for location and `orig` as embedded source.
 
 ## Canonical Read Patterns
 
@@ -76,10 +97,6 @@ else:
   skip n
 ```
 
-Why this works:
-
-- The plugin API is explicit about token-level stepping versus subtree-level stepping.
-
 ### 2. Clone readers for lookahead
 
 Copy `Node` when you want lookahead without committing to movement on the original.
@@ -92,10 +109,6 @@ inc probe
 if probe.kind == Symbol:
   # commit later if wanted
 ```
-
-Why this works:
-
-- `Node` copies keep the original traversal state intact.
 
 ### 3. Distinguish token stepping from subtree stepping
 
@@ -213,10 +226,6 @@ proc rewriteCall(n: var Node): Tree =
       result.takeTree(n)
 ```
 
-Why this works:
-
-- It keeps the rewrite local and easy to reason about.
-
 ### Pattern: inspect without consuming
 
 Use when you need a predicate or branch decision but still need the original node later.
@@ -226,10 +235,6 @@ proc isSimpleIdent(n: Node): bool =
   var probe = n
   result = probe.kind == Ident
 ```
-
-Why this works:
-
-- It gives you lookahead without disturbing the main traversal state.
 
 ### Pattern: synthesize temporary structure, then reread it
 
@@ -243,17 +248,9 @@ tmp.withTree(TupleT, NoLineInfo):
 let tmpNode = snapshot(tmp)
 ```
 
-Why this works:
-
-- It lets later logic work against normal tree shape instead of ad hoc state.
-
 ### Pattern: preserve original source on errors
 
 Use `errorTree(msg, at)` or `errorTree(msg, at, orig)` rather than constructing a bare `ErrT` by hand.
-
-Why this works:
-
-- It keeps errors attached to the source that triggered them.
 
 ## Do
 
@@ -267,7 +264,6 @@ Why this works:
 
 ## Don't
 
-- Do not document or code against a different checkout's API.
 - Do not assume `Tree` mutation is shared across copies.
 - Do not assume `Node` is just a raw cursor with no lifetime semantics.
 - Do not call `snapshot` on an empty tree.
