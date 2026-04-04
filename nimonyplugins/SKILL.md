@@ -313,29 +313,30 @@ Preserve existing subtrees when they are already correct. It is simpler and less
 
 ## Minimal Working Style
 
+Call site:
+
 ```nim
-template cliapp*(spec: string): untyped {.plugin: "smartcliplugin".}
+template generateEcho(s: string) {.plugin: "deps/mplugin1".}
+
+generateEcho("Hello, world!")
 ```
 
-Plugin entrypoint:
+Plugin file:
 
 ```nim
 import nimonyplugins
 
-proc generate(input: Node): Tree =
+proc tr(n: Node): Tree =
   result = createTree()
-  var n = input
   let info = n.info
+  var n = n
   if n.stmtKind == StmtsS:
     inc n
-
   result.withTree(StmtsS, info):
     result.withTree(CallS, info):
       result.addIdent "echo"
       result.takeTree(n)
-    while n.kind != ParRi:
-      result.takeTree(n)
 
-let root = loadPluginInput()
-saveTree generate(root)
+var inp = loadPluginInput()
+saveTree tr(inp)
 ```
