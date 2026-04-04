@@ -1,0 +1,200 @@
+name: Release Build
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+env:
+  VERSION: ${{ github.ref_name }}
+
+jobs:
+  build-linux:
+    name: Build Linux (x86_64)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install Nim
+        uses: jiro4989/setup-nim-action@v2
+        with:
+          nim-version: stable
+          repo-token: ${{ github.token }}
+
+      - name: Install Atlas via Nimble
+        run: nimble install -y "https://github.com/nim-lang/atlas@#head"
+
+      - name: Install Nim dependencies
+        run: atlas install
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libcurl4-openssl-dev libsndfile1-dev
+
+      - name: Build release binary
+        run: nim c -d:release -o:chunktts src/app.nim
+
+      - name: Strip executable
+        run: strip chunktts
+
+      - name: Create archive
+        run: |
+          mkdir -p dist
+          cp chunktts dist/
+          cp config.json dist/
+          cp README.md dist/
+          tar -czf chunktts-linux-x86_64.tar.gz -C dist .
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: chunktts-linux-x86_64-${{ env.VERSION }}
+          path: chunktts-linux-x86_64.tar.gz
+          if-no-files-found: error
+
+  build-macos:
+    name: Build macOS (arm64)
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install Nim
+        uses: jiro4989/setup-nim-action@v2
+        with:
+          nim-version: stable
+          repo-token: ${{ github.token }}
+
+      - name: Install Atlas via Nimble
+        run: nimble install -y "https://github.com/nim-lang/atlas@#head"
+
+      - name: Install Nim dependencies
+        run: atlas install
+
+      - name: Install build dependencies
+        run: brew install curl libsndfile
+
+      - name: Build release binary
+        run: nim c -d:release -o:chunktts src/app.nim
+
+      - name: Create archive
+        run: |
+          mkdir -p dist
+          cp chunktts dist/
+          cp config.json dist/
+          cp README.md dist/
+          tar -czf chunktts-macos-arm64.tar.gz -C dist .
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: chunktts-macos-arm64-${{ env.VERSION }}
+          path: chunktts-macos-arm64.tar.gz
+          if-no-files-found: error
+
+  build-windows:
+    name: Build Windows (x86_64)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install Nim
+        uses: jiro4989/setup-nim-action@v2
+        with:
+          nim-version: stable
+          repo-token: ${{ github.token }}
+
+      - name: Install Atlas via Nimble
+        run: nimble install -y "https://github.com/nim-lang/atlas@#head"
+
+      - name: Install Nim dependencies
+        run: atlas install
+
+      - name: Install build dependencies
+        uses: johnwason/vcpkg-action@v7
+        id: vcpkg
+        with:
+          pkgs: curl[http2,ssl,c-ares] libsndfile
+          triplet: x64-windows-release
+          token: ${{ github.token }}
+
+      - name: Build release binary
+        shell: pwsh
+        env:
+          VCPKG_ROOT: ${{ github.workspace }}\vcpkg\installed\x64-windows-release
+        run: nim c -d:release -o:chunktts.exe src/app.nim
+
+      - name: Create archive
+        shell: pwsh
+        env:
+          VCPKG_ROOT: ${{ github.workspace }}\vcpkg\installed\x64-windows-release
+        run: |
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Copy-Item chunktts.exe dist/
+          Copy-Item config.json dist/
+          Copy-Item README.md dist/
+          Copy-Item "$env:VCPKG_ROOT\\bin\\*.dll" dist/ -ErrorAction Stop
+          Compress-Archive -Path dist\* -DestinationPath chunktts-windows-x86_64.zip -Force
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: chunktts-windows-x86_64-${{ env.VERSION }}
+          path: chunktts-windows-x86_64.zip
+          if-no-files-found: error
+
+  create-release:
+    name: Create Release
+    needs:
+      - build-linux
+      - build-macos
+      - build-windows
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v5
+        with:
+          path: artifacts
+
+      - name: Gather release files
+        run: |
+          mkdir -p artifacts/release
+          find artifacts -type f \( -name "*.zip" -o -name "*.tar.gz" \) -exec cp {} artifacts/release/ \;
+          ls -la artifacts/release/
+
+      - name: Create release notes
+        run: |
+          cat > release-notes.md << EOF
+          ## Release ${{ env.VERSION }}
+
+          Prebuilt binaries for:
+
+          - Linux x86_64: chunktts-linux-x86_64.tar.gz
+          - macOS arm64: chunktts-macos-arm64.tar.gz
+          - Windows x86_64: chunktts-windows-x86_64.zip
+
+          Each archive includes the chunktts executable, a sample config.json, and the project README.
+          Linux and macOS users must still provide system runtime libraries for libcurl and libsndfile.
+          EOF
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.VERSION }}
+          name: Release ${{ env.VERSION }}
+          body_path: release-notes.md
+          files: artifacts/release/*
+          draft: true
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

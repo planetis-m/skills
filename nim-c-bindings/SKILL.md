@@ -8,6 +8,7 @@ description: Operational rules for reliable Nim to C bindings across Linux, macO
 ## Scope
 - This is a prescriptive rulebook for building Nim bindings to C libraries across Linux, macOS, and Windows.
 - Use it as a checklist for reliable CI builds and portable runtime behavior.
+- When the task involves authoring or repairing GitHub Actions for a Nim C-binding project, read [references/ci.yml](references/ci.yml) and [references/release.yml](references/release.yml) for concrete workflow examples that match this skill's platform assumptions.
 
 ## Core Workflow (Binding + Build)
 - Use `importc` with `callconv: cdecl` for C APIs unless the library explicitly uses a different calling convention.
@@ -34,6 +35,9 @@ description: Operational rules for reliable Nim to C bindings across Linux, macO
 - Any local workflow not compatible with CI is disallowed.
 - Keep test builds simple and reproducible: compile, then run, with minimal environment mutation.
 - Ensure the CI toolchain and the dependency toolchain match (e.g., MSVC + vcpkg `x64-windows-release` with `--cc:vcc`).
+- Prefer reference workflows over ad hoc YAML when adding new CI/release automation:
+  - [references/ci.yml](references/ci.yml) for cross-platform validation.
+  - [references/release.yml](references/release.yml) for tagged release builds and draft GitHub releases.
 
 ## Platform-Specific Rules
 

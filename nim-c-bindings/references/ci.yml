@@ -1,0 +1,105 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install Nim
+        uses: jiro4989/setup-nim-action@v2
+        with:
+          nim-version: stable
+          repo-token: ${{ github.token }}
+
+      - name: Install Atlas via Nimble
+        run: nimble install -y "https://github.com/nim-lang/atlas@#head"
+
+      - name: Install Nim dependencies
+        run: atlas install
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libcurl4-openssl-dev libsndfile1-dev
+
+      - name: Build App
+        run: nim c -d:release -o:chunktts src/app.nim
+
+      - name: Run Tests
+        run: nim test tests/ci.nims
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install Nim
+        uses: jiro4989/setup-nim-action@v2
+        with:
+          nim-version: stable
+          repo-token: ${{ github.token }}
+
+      - name: Install Atlas via Nimble
+        run: nimble install -y "https://github.com/nim-lang/atlas@#head"
+
+      - name: Install Nim dependencies
+        run: atlas install
+
+      - name: Install Dependencies
+        run: brew install curl libsndfile
+
+      - name: Build App
+        run: nim c -d:release -o:chunktts src/app.nim
+
+      - name: Run Tests
+        run: nim test tests/ci.nims
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install Nim
+        uses: jiro4989/setup-nim-action@v2
+        with:
+          nim-version: stable
+          repo-token: ${{ github.token }}
+
+      - name: Install Atlas via Nimble
+        run: nimble install -y "https://github.com/nim-lang/atlas@#head"
+
+      - name: Install Nim dependencies
+        run: atlas install
+
+      - name: vcpkg build
+        uses: johnwason/vcpkg-action@v7
+        id: vcpkg
+        with:
+          pkgs: curl[http2,ssl,c-ares] libsndfile
+          triplet: x64-windows-release
+          token: ${{ github.token }}
+
+      - name: Build App
+        shell: pwsh
+        env:
+          VCPKG_ROOT: ${{ github.workspace }}\vcpkg\installed\x64-windows-release
+        run: nim c -d:release -o:chunktts.exe src/app.nim
+
+      - name: Run Tests
+        shell: pwsh
+        env:
+          VCPKG_ROOT: ${{ github.workspace }}\vcpkg\installed\x64-windows-release
+        run: |
+          $env:PATH = "$env:VCPKG_ROOT\\bin;" + $env:PATH
+          nim test tests/ci.nims
