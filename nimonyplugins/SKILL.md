@@ -9,8 +9,10 @@ Use this skill when writing or reviewing plugins built on `nimonyplugins`.
 
 ## First Step
 
-Open the `nimonyplugins.nim` that the plugin actually imports.
-If multiple copies exist, resolve it with `nim c --listFullPaths your_plugin.nim`.
+Open the `nimonyplugins.nim` used by the exact `nimony` executable you will run.
+Resolve that executable first with `readlink -f "$(command -v nimony)"`.
+If that executable is `.../bin/nimony`, open `../src/nimony/lib/nimonyplugins.nim` from there.
+Otherwise open `src/nimony/lib/nimonyplugins.nim` under the executable's directory.
 
 ## Mental Model
 
@@ -218,7 +220,7 @@ Use when rewriting one subtree into another and preserving most children.
 ```nim
 proc rewriteCall(n: var Node): Tree =
   result = createTree()
-  let info = n.info
+let info = n.info
   result.withTree(CallX, info):
     inc n
     result.takeTree(n)
