@@ -8,6 +8,16 @@ description: Design, review, and implement Nim ARC/ORC ownership hooks and move 
 Use this skill when editing or reviewing Nim ownership hooks under ARC/ORC.
 Start by classifying the type's ownership model, then implement only the hook set that model actually needs, while preserving the codebase's local style.
 
+## Default stance
+
+Most types do **not** need a custom `=destroy`.
+Do not write ownership hooks unless the type owns something the compiler cannot already manage correctly.
+
+In particular:
+
+- A type that only contains compiler-managed fields like `string`, `seq`, or `ref` usually should keep the compiler defaults.
+- A type that manually owns raw storage or another external resource usually does need custom hooks.
+
 ## Workflow
 
 1. Classify the type.
@@ -20,12 +30,14 @@ Start by classifying the type's ownership model, then implement only the hook se
 
 Choose the hook set from the type's real ownership model before editing anything:
 
+- Plain value or compiler-managed aggregate:
+  No custom hooks. Let the compiler-generated destruction recurse into fields like `string`, `seq`, and `ref`.
 - Borrowing or view type:
   Usually no custom hooks. Prefer `lent` results for immutable accessors.
 - Move-only owner:
-  Implement `=destroy` and `=wasMoved`. Add `=sink` only when compiler-generated sink is not acceptable. Mark `=copy` and often `=dup` as `.error.`.
+  Implement `=destroy` and `=wasMoved`. This is the common model for manually allocated buffers and other exclusive resources. Add `=sink` only when compiler-generated sink is not acceptable. Mark `=copy` and often `=dup` as `.error.`.
 - Deep-owning container:
-  Implement `=destroy`, `=wasMoved`, `=copy`, and `=dup`. Add `=sink` only when direct field transfer is required by semantics or style.
+  Implement `=destroy`, `=wasMoved`, `=copy`, and `=dup`. This is the model for containers that manually allocate backing storage and own their elements. Add `=sink` only when direct field transfer is required by semantics or style.
 - Shared or refcounted handle:
   `=copy` and `=dup` usually retain or share a payload instead of deep-copying it.
 
@@ -210,6 +222,9 @@ When a helper must appear before the hooks:
 
 ## Common review traps
 
+- Adding custom hooks to a type that does not own any manual resource.
+- Assuming an object that contains `string`, `seq`, or `ref` needs a custom destructor.
+- Assuming manually owned raw storage is freed automatically because the enclosing object gets destroyed.
 - Adding a custom `=sink` when compiler-generated sink was fine.
 - Adding self-assignment checks to `=sink`.
 - Using `copyMem` or whole-object raw moves in a custom `=sink` and bypassing child hook semantics.

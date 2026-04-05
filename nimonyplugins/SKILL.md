@@ -220,7 +220,7 @@ Use when rewriting one subtree into another and preserving most children.
 ```nim
 proc rewriteCall(n: var Node): Tree =
   result = createTree()
-let info = n.info
+  let info = n.info
   result.withTree(CallX, info):
     inc n
     result.takeTree(n)
