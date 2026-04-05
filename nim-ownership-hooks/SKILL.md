@@ -11,12 +11,13 @@ Start by classifying the type's ownership model, then implement only the hook se
 ## Default stance
 
 Most types do **not** need a custom `=destroy`.
-Do not write ownership hooks unless the type owns something the compiler cannot already manage correctly.
+Do not write ownership hooks unless the type owns a resource the compiler cannot release on its own.
 
-In particular:
+The compiler auto-manages destruction for primitives, `string`, `seq[T]`, `ref T`, `array`, tuples, closures, and objects whose fields are all auto-managed.
+It also lifts hooks through arbitrary nesting: if a field's type already has custom hooks, the enclosing type gets correct compiler-generated hooks for free.
 
-- A type that only contains compiler-managed fields like `string`, `seq`, or `ref` usually should keep the compiler defaults.
-- A type that manually owns raw storage or another external resource usually does need custom hooks.
+Custom hooks are needed when the type holds a resource the compiler cannot release:
+raw pointers (`ptr T`) to manually allocated memory, OS file descriptors or socket handles, distinct types used as handles, mutexes, or any other non-managed resource.
 
 ## Workflow
 
@@ -31,7 +32,7 @@ In particular:
 Choose the hook set from the type's real ownership model before editing anything:
 
 - Plain value or compiler-managed aggregate:
-  No custom hooks. Let the compiler-generated destruction recurse into fields like `string`, `seq`, and `ref`.
+  No custom hooks. The compiler lifts destruction recursively through fields.
 - Borrowing or view type:
   Usually no custom hooks. Prefer `lent` results for immutable accessors.
 - Move-only owner:
@@ -222,8 +223,7 @@ When a helper must appear before the hooks:
 
 ## Common review traps
 
-- Adding custom hooks to a type that does not own any manual resource.
-- Assuming an object that contains `string`, `seq`, or `ref` needs a custom destructor.
+- Adding custom hooks to a type whose fields are all auto-managed or already have their own hooks.
 - Assuming manually owned raw storage is freed automatically because the enclosing object gets destroyed.
 - Adding a custom `=sink` when compiler-generated sink was fine.
 - Adding self-assignment checks to `=sink`.
