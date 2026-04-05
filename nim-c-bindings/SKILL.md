@@ -12,7 +12,7 @@ description: Operational rules for reliable Nim to C bindings across Linux, macO
 
 ## Core Workflow (Binding + Build)
 - Use `importc` with `callconv: cdecl` for C APIs unless the library explicitly uses a different calling convention.
-- Represent opaque C handles as `distinct pointer` types in Nim.
+- Represent opaque C handles as type Name = ptr object types in Nim.
 - For partial or opaque C structs, use `incompleteStruct` to avoid size/layout mismatches.
 - For value structs that Nim must pass by value, use `bycopy`.
 - Declare the C header in the binding (`header: "<...>"`) when the compiler needs definitions.
