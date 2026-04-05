@@ -17,7 +17,7 @@ The compiler auto-manages destruction for primitives, `string`, `seq[T]`, `ref T
 It also lifts hooks through arbitrary nesting: if a field's type already has custom hooks, the enclosing type gets correct compiler-generated hooks for free.
 
 Custom hooks are needed when the type holds a resource the compiler cannot release:
-raw pointers (`ptr T`) to manually allocated memory, OS file descriptors or socket handles, distinct types used as handles, mutexes, or any other non-managed resource.
+raw pointers (`ptr T`) to manually allocated memory, OS file descriptors or socket handles, distinct types used as handles, or any other non-managed resource.
 
 ## Workflow
 
