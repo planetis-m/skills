@@ -1,14 +1,14 @@
 ---
 name: nim-c-bindings
-description: Operational rules for reliable Nim to C bindings across Linux, macOS, and Windows.
+description: Prescriptive rules for portable Nim-to-C bindings (importc, linking, rpath, platform quirks) plus complete, copy-paste-ready GitHub Actions CI/release workflows for cross-platform Nim projects (Linux, macOS, Windows).
 ---
 
-# Nim C Bindings
+# Nim C Bindings & CI
 
 ## Scope
-- This is a prescriptive rulebook for building Nim bindings to C libraries across Linux, macOS, and Windows.
-- Use it as a checklist for reliable CI builds and portable runtime behavior.
-- When the task involves authoring or repairing GitHub Actions for a Nim C-binding project, read [references/ci.yml](references/ci.yml) and [references/release.yml](references/release.yml) for concrete workflow examples that match this skill's platform assumptions.
+- **C bindings**: prescriptive rules for `importc`, linking, rpath, and platform-specific quirks when wrapping C libraries from Nim.
+- **CI/release workflows**: ready-to-adapt GitHub Actions pipelines for cross-platform Nim projects — test CI on every push/PR and tagged release builds that produce draft GitHub Releases with per-platform archives.
+- When the task involves authoring or repairing GitHub Actions for a Nim C-binding project, read [references/ci.yml](references/ci.yml) and [references/release.yml](references/release.yml) for concrete workflow templates.
 
 ## Core Workflow (Binding + Build)
 - Use `importc` with `callconv: cdecl` for C APIs unless the library explicitly uses a different calling convention.
@@ -30,7 +30,7 @@ description: Operational rules for reliable Nim to C bindings across Linux, macO
 - On Linux, add rpath only for tests/apps that load colocated shared libs:
   - `--passL:"-Wl,-rpath,\\$ORIGIN"`
 
-## CI-Driven Constraints (Generalized)
+## CI & Release Workflows
 - Treat CI as the authoritative spec for supported platforms, toolchains, and flags.
 - Any local workflow not compatible with CI is disallowed.
 - Keep test builds simple and reproducible: compile, then run, with minimal environment mutation.

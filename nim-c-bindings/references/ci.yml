@@ -1,3 +1,16 @@
+# Cross-platform CI for a Nim project with C dependencies.
+#
+# Adapt the following placeholders to your project:
+#   <package>         – your binary/library name
+#   <src/main.nim>    – entry point passed to `nim c`
+#   <apt-deps>        – space-separated apt packages (Linux)
+#   <brew-deps>       – space-separated Homebrew formulae (macOS)
+#   <vcpkg-deps>      – space-separated vcpkg packages (Windows)
+#   <vcpkg-features>  – vcpkg feature flags, if any
+#
+# If your project has no system C dependencies, remove the
+# "Install system dependencies" steps entirely.
+
 name: CI
 
 on:
@@ -26,16 +39,16 @@ jobs:
       - name: Install Nim dependencies
         run: atlas install
 
-      - name: Install Dependencies
+      - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libcurl4-openssl-dev libsndfile1-dev
+          sudo apt-get install -y <apt-deps>
 
-      - name: Build App
-        run: nim c -d:release -o:chunktts src/app.nim
+      - name: Build
+        run: nim c -d:release -o:<package> <src/main.nim>
 
       - name: Run Tests
-        run: nim test tests/ci.nims
+        run: nim test
 
   macos:
     runs-on: macos-latest
@@ -55,14 +68,14 @@ jobs:
       - name: Install Nim dependencies
         run: atlas install
 
-      - name: Install Dependencies
-        run: brew install curl libsndfile
+      - name: Install system dependencies
+        run: brew install <brew-deps>
 
-      - name: Build App
-        run: nim c -d:release -o:chunktts src/app.nim
+      - name: Build
+        run: nim c -d:release -o:<package> <src/main.nim>
 
       - name: Run Tests
-        run: nim test tests/ci.nims
+        run: nim test
 
   windows:
     runs-on: windows-latest
@@ -82,24 +95,24 @@ jobs:
       - name: Install Nim dependencies
         run: atlas install
 
-      - name: vcpkg build
+      - name: Install system dependencies (vcpkg)
         uses: johnwason/vcpkg-action@v7
         id: vcpkg
         with:
-          pkgs: curl[http2,ssl,c-ares] libsndfile
+          pkgs: <vcpkg-deps>
           triplet: x64-windows-release
           token: ${{ github.token }}
 
-      - name: Build App
+      - name: Build
         shell: pwsh
         env:
           VCPKG_ROOT: ${{ github.workspace }}\vcpkg\installed\x64-windows-release
-        run: nim c -d:release -o:chunktts.exe src/app.nim
+        run: nim c -d:release -o:<package>.exe <src/main.nim>
 
       - name: Run Tests
         shell: pwsh
         env:
           VCPKG_ROOT: ${{ github.workspace }}\vcpkg\installed\x64-windows-release
         run: |
-          $env:PATH = "$env:VCPKG_ROOT\\bin;" + $env:PATH
-          nim test tests/ci.nims
+          $env:PATH = "$env:VCPKG_ROOT\bin;" + $env:PATH
+          nim test

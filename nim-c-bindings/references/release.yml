@@ -1,3 +1,13 @@
+# Cross-platform release build for a Nim project with C dependencies.
+#
+# Adapt the following placeholders to your project:
+#   <package>         – your binary name (used for output and archive naming)
+#   <src/main.nim>    – entry point passed to `nim c`
+#   <apt-deps>        – space-separated apt packages (Linux)
+#   <brew-deps>       – space-separated Homebrew formulae (macOS)
+#   <vcpkg-deps>      – space-separated vcpkg packages (Windows)
+#   <dist-files>      – extra files to include in the release archive (README, config, etc.)
+
 name: Release Build
 
 on:
@@ -34,27 +44,26 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libcurl4-openssl-dev libsndfile1-dev
+          sudo apt-get install -y <apt-deps>
 
       - name: Build release binary
-        run: nim c -d:release -o:chunktts src/app.nim
+        run: nim c -d:release -o:<package> <src/main.nim>
 
       - name: Strip executable
-        run: strip chunktts
+        run: strip <package>
 
       - name: Create archive
         run: |
           mkdir -p dist
-          cp chunktts dist/
-          cp config.json dist/
-          cp README.md dist/
-          tar -czf chunktts-linux-x86_64.tar.gz -C dist .
+          cp <package> dist/
+          # cp <dist-files> dist/
+          tar -czf <package>-linux-x86_64.tar.gz -C dist .
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: chunktts-linux-x86_64-${{ env.VERSION }}
-          path: chunktts-linux-x86_64.tar.gz
+          name: <package>-linux-x86_64-${{ env.VERSION }}
+          path: <package>-linux-x86_64.tar.gz
           if-no-files-found: error
 
   build-macos:
@@ -77,24 +86,23 @@ jobs:
         run: atlas install
 
       - name: Install build dependencies
-        run: brew install curl libsndfile
+        run: brew install <brew-deps>
 
       - name: Build release binary
-        run: nim c -d:release -o:chunktts src/app.nim
+        run: nim c -d:release -o:<package> <src/main.nim>
 
       - name: Create archive
         run: |
           mkdir -p dist
-          cp chunktts dist/
-          cp config.json dist/
-          cp README.md dist/
-          tar -czf chunktts-macos-arm64.tar.gz -C dist .
+          cp <package> dist/
+          # cp <dist-files> dist/
+          tar -czf <package>-macos-arm64.tar.gz -C dist .
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: chunktts-macos-arm64-${{ env.VERSION }}
-          path: chunktts-macos-arm64.tar.gz
+          name: <package>-macos-arm64-${{ env.VERSION }}
+          path: <package>-macos-arm64.tar.gz
           if-no-files-found: error
 
   build-windows:
@@ -116,11 +124,11 @@ jobs:
       - name: Install Nim dependencies
         run: atlas install
 
-      - name: Install build dependencies
+      - name: Install build dependencies (vcpkg)
         uses: johnwason/vcpkg-action@v7
         id: vcpkg
         with:
-          pkgs: curl[http2,ssl,c-ares] libsndfile
+          pkgs: <vcpkg-deps>
           triplet: x64-windows-release
           token: ${{ github.token }}
 
@@ -128,7 +136,7 @@ jobs:
         shell: pwsh
         env:
           VCPKG_ROOT: ${{ github.workspace }}\vcpkg\installed\x64-windows-release
-        run: nim c -d:release -o:chunktts.exe src/app.nim
+        run: nim c -d:release -o:<package>.exe <src/main.nim>
 
       - name: Create archive
         shell: pwsh
@@ -136,17 +144,16 @@ jobs:
           VCPKG_ROOT: ${{ github.workspace }}\vcpkg\installed\x64-windows-release
         run: |
           New-Item -ItemType Directory -Force -Path dist | Out-Null
-          Copy-Item chunktts.exe dist/
-          Copy-Item config.json dist/
-          Copy-Item README.md dist/
-          Copy-Item "$env:VCPKG_ROOT\\bin\\*.dll" dist/ -ErrorAction Stop
-          Compress-Archive -Path dist\* -DestinationPath chunktts-windows-x86_64.zip -Force
+          Copy-Item <package>.exe dist/
+          # Copy-Item <dist-files> dist/
+          Copy-Item "$env:VCPKG_ROOT\bin\*.dll" dist/ -ErrorAction Stop
+          Compress-Archive -Path dist\* -DestinationPath <package>-windows-x86_64.zip -Force
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: chunktts-windows-x86_64-${{ env.VERSION }}
-          path: chunktts-windows-x86_64.zip
+          name: <package>-windows-x86_64-${{ env.VERSION }}
+          path: <package>-windows-x86_64.zip
           if-no-files-found: error
 
   create-release:
@@ -178,12 +185,12 @@ jobs:
 
           Prebuilt binaries for:
 
-          - Linux x86_64: chunktts-linux-x86_64.tar.gz
-          - macOS arm64: chunktts-macos-arm64.tar.gz
-          - Windows x86_64: chunktts-windows-x86_64.zip
+          - Linux x86_64: <package>-linux-x86_64.tar.gz
+          - macOS arm64: <package>-macos-arm64.tar.gz
+          - Windows x86_64: <package>-windows-x86_64.zip
 
-          Each archive includes the chunktts executable, a sample config.json, and the project README.
-          Linux and macOS users must still provide system runtime libraries for libcurl and libsndfile.
+          Each archive includes the <package> executable.
+          Linux and macOS users must provide system runtime libraries for any C dependencies.
           EOF
 
       - name: Create GitHub Release
