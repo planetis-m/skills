@@ -206,14 +206,15 @@ Prefer `lent` over manufacturing cheap-looking copies of owned elements.
 
 ## Hook declaration ordering
 
-Declare custom hooks immediately after the type definition, before any procs, converters,
-iterators, closures, or generic instantiations that mention the type.
-The compiler eagerly generates implicit hooks for many proc signatures and will error if
-a custom hook appears afterward.
+Declare custom hooks before any Nim-defined procs, converters, iterators, closures, or
+generic instantiations that mention the type.
+The compiler eagerly generates implicit hooks for many Nim proc signatures and will error
+if a custom hook appears afterward.
+`importc` procs are opaque to the compiler and do not trigger implicit hook generation,
+so they may safely appear before the hooks.
 
 Only templates may safely appear between the type definition and the hooks.
 If a hook body needs a shared helper, write it as a small template directly before the hooks.
-Do not stack alias templates on top of other templates unless it clearly improves the code.
 
 ## Common review traps
 
