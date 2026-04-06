@@ -233,10 +233,6 @@ When a helper must appear before the hooks:
 - Removing `raises: []` from a proc-typed destructor callback without intending to change effects.
 - Declaring helper procs before the hooks and triggering the phase-order problem.
 - Adding speculative branches such as special zero-count allocation handling without evidence they are needed.
-- Rewriting local style while touching hooks:
-  if the codebase bans early returns, avoid them;
-  if it prefers typed templates without `var`, follow that;
-  if it dislikes template aliases, inline the expression.
 
 ## Review checklist
 
