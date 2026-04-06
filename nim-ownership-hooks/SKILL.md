@@ -206,20 +206,14 @@ Prefer `lent` over manufacturing cheap-looking copies of owned elements.
 
 ## Hook declaration ordering
 
-Custom hooks must be visible before the compiler generates implicit hooks for the type.
-Practical triggers include:
+Declare custom hooks immediately after the type definition, before any procs, converters,
+iterators, closures, or generic instantiations that mention the type.
+The compiler eagerly generates implicit hooks for many proc signatures and will error if
+a custom hook appears afterward.
 
-- `let` or `var` bindings of the type
-- assignments to the type
-- function calls returning the type
-- sink parameters of the type
-
-Do not declare helper procs that use the type before the hooks if that can trigger hook generation.
-When a helper must appear before the hooks:
-
-- Prefer a small `template`.
-- Keep it direct.
-- Do not stack local alias templates on top of other templates unless it clearly improves the code.
+Only templates may safely appear between the type definition and the hooks.
+If a hook body needs a shared helper, write it as a small template directly before the hooks.
+Do not stack alias templates on top of other templates unless it clearly improves the code.
 
 ## Common review traps
 
