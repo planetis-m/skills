@@ -8,7 +8,6 @@ description: Prescriptive rules for portable Nim-to-C bindings (importc, linking
 ## Scope
 - **C bindings**: prescriptive rules for `importc`, linking, rpath, and platform-specific quirks when wrapping C libraries from Nim.
 - **CI/release workflows**: ready-to-adapt GitHub Actions pipelines for cross-platform Nim projects — test CI on every push/PR and tagged release builds that produce draft GitHub Releases with per-platform archives.
-- When the task involves authoring or repairing GitHub Actions for a Nim C-binding project, read [references/ci.yml](references/ci.yml) and [references/release.yml](references/release.yml) for concrete workflow templates.
 
 ## Core Workflow (Binding + Build)
 - Use `importc` with `callconv: cdecl` for C APIs unless the library explicitly uses a different calling convention.
