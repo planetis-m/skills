@@ -8,7 +8,7 @@ type
     items: seq[string]
 
 proc initCatalog(initialSize = 8): Catalog =
-  result.items = newSeqOfCap[string](initialSize)
+  Catalog(items: newSeqOfCap[string](initialSize))
 
 proc toCatalog(items: openArray[string]): Catalog =
   result = initCatalog(items.len)
@@ -29,7 +29,7 @@ type
 
 proc newCatalog(initialSize = 8): CatalogRef =
   new(result)
-  result.items = initCatalog(initialSize).items
+  result[] = initCatalog(initialSize)
 ```
 
 ## Key points
@@ -37,5 +37,5 @@ proc newCatalog(initialSize = 8): CatalogRef =
 - `initX()` is the primary constructor for value types.
 - `toX()` is the primary conversion surface. Overload the same name on common inputs.
 - Default parameters keep the simple call path simple.
-- If a ref wrapper is necessary, `newX()` should delegate to `initX()` instead of
-  duplicating initialization logic.
+- If a ref wrapper is necessary, `newX()` should use `new(result)` and may assign
+  `result[] = initX(...)` to reuse the value-type initialization logic.

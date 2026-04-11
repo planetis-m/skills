@@ -22,19 +22,24 @@ proc findIndex(catalog: PackageCatalog; id: string): int {.inline.} =
       return i
   raiseAccessorError("unknown package id: " & id)
 
-proc meta*(catalog: PackageCatalog; id: string): lent PackageMeta {.inline.} =
+proc meta*(catalog: PackageCatalog; id: string): lent PackageMeta
+    {.inline, raises: [KeyError].} =
   result = catalog.entries[findIndex(catalog, id)]
 
-proc tags*(catalog: PackageCatalog; id: string): lent seq[string] {.inline.} =
+proc tags*(catalog: PackageCatalog; id: string): lent seq[string]
+    {.inline, raises: [KeyError].} =
   result = catalog.entries[findIndex(catalog, id)].tags
 
-proc tags*(catalog: var PackageCatalog; id: string): var seq[string] {.inline.} =
+proc tags*(catalog: var PackageCatalog; id: string): var seq[string]
+    {.inline, raises: [KeyError].} =
   result = catalog.entries[findIndex(catalog, id)].tags
 ```
 
 ## Key points
 
 - One shared `{.noinline, noreturn.}` helper defines the missing-item failure path.
+- Exported accessors make that stable failure path explicit with
+  `{.raises: [KeyError].}`.
 - Read accessors borrow with `lent`; mutable access is exposed only for the
   `seq[string]` field that callers are expected to edit.
 - Accessors return directly from the owner field. No temp locals.

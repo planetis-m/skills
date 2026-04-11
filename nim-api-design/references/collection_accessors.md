@@ -24,8 +24,10 @@ proc raiseMissingPackage(id: PackageId) {.noinline, noreturn.} =
   raise newException(KeyError, "unknown package: " & $id)
 
 proc initPackageCatalog(initialSize = 8): PackageCatalog =
-  result.ids = newSeqOfCap[PackageId](initialSize)
-  result.entries = newSeqOfCap[PackageMeta](initialSize)
+  PackageCatalog(
+    ids: newSeqOfCap[PackageId](initialSize),
+    entries: newSeqOfCap[PackageMeta](initialSize)
+  )
 
 proc toPackageCatalog(pairs: openArray[(PackageId, PackageMeta)]): PackageCatalog =
   result = initPackageCatalog(pairs.len)

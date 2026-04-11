@@ -22,7 +22,7 @@ type
     pageCount: Natural
     warnings: seq[string]
 
-proc renderDocument*(path: string): RenderSummary =
+proc renderDocument*(path: string): RenderSummary {.raises: [ValueError].} =
   if path.len == 0:
     raise newException(ValueError, "path is empty")
   result = RenderSummary(pageCount: 1, warnings: @[])
@@ -33,4 +33,6 @@ proc renderDocument*(path: string): RenderSummary =
 - A named result object tells the caller what the successful shape is.
 - Contract violations still raise exceptions instead of flowing through a
   secondary string channel.
+- The exported proc makes that stable contract explicit with
+  `{.raises: [ValueError].}`.
 - Keep the public result shape focused on successful semantic data.
