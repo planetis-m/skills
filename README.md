@@ -27,22 +27,6 @@ Skill names in this repository use these conventions:
 - Use plural forms for broad guidance areas when the skill covers a category rather than one artifact.
 - Keep the skill folder name and the `name:` value in `SKILL.md` identical.
 
-## Layout
-
-```text
-skills-repo/
-  nim-c-bindings/SKILL.md
-  nim-ownership-hooks/SKILL.md
-  nim-style-guide/SKILL.md
-  nim-api-design/SKILL.md
-  nim-error-handling/SKILL.md
-  nim-code-organization/SKILL.md
-  nimonyplugins/SKILL.md
-  product-readme-examples/SKILL.md
-  nim-doc-comments/SKILL.md
-  nim-c-wrappers/SKILL.md
-```
-
 ## Where to install skills
 
 Codex loads skills from these scopes:
