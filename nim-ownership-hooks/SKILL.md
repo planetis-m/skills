@@ -33,12 +33,14 @@ Custom hooks are needed only for: raw pointers (`ptr T`) to manually allocated m
 
 Declare hooks **before** any proc that mentions the type — including `=dup`, whose body can trigger implicit `=copy` generation. Safe order:
 
-```
-type T = object ...
-proc `=destroy`*(x: T) = ...
-proc `=wasMoved`*(x: var T) = ...
-proc `=copy`*(dest: var T; src: T) = ...
-proc `=dup`*(src: T): T = ...     # after =copy to avoid conflicts
+```nim
+type Buffer = object
+  p: pointer
+
+proc `=destroy`*(x: Buffer) = discard
+proc `=wasMoved`*(x: var Buffer) = x.p = nil
+proc `=copy`*(dest: var Buffer; src: Buffer) = discard
+proc `=dup`*(src: Buffer): Buffer = discard   # after =copy to avoid conflicts
 ```
 
 Templates are safe between type and hooks. Generics used before their hooks trigger compiler errors.

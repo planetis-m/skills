@@ -77,4 +77,4 @@ This follows the preferred inverted counter convention from the local `cowstring
 - `=copy` has no self-assign guard — destroy decrements, `dups` increments, net zero
 - `=dup` has no `{.nodestroy.}` — refcount balances
 
-Source: simplified from `/home/ageralis/Projects/cowstrings/cowstrings.nim`.
+Source: simplified from a local `cowstrings` implementation that uses the same inverted-counter convention.

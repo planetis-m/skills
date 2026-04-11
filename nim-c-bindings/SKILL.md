@@ -14,14 +14,14 @@ Rules for writing portable Nim-to-C bindings and cross-platform CI/release workf
 1. Use `importc` with `callconv: cdecl` for C APIs unless the library explicitly requires a different calling convention (e.g., `stdcall`).
 2. Represent opaque C handles as `type Name = ptr object` types. Use `incompleteStruct` for partial/opaque structs to avoid size/layout mismatches.
 3. Use `{.bycopy.}` on structs that Nim must pass by value to C.
-4. Declare the C header (`header: "<...>"`) in the binding when the compiler needs the C definitions for compilation.
+4. Declare the C header in the binding when the compiler needs the C definitions for compilation, for example `header: "foo.h"`.
 5. Use `{.push callconv: cdecl, header: "foo.h".}` blocks when many declarations share the same convention and header.
 
 ### Linking
 
 6. **System libraries**: link with `-l<name>` only. Do not hardcode `-L` paths — the OS toolchain already knows where system libs live.
 7. **Local/third-party libraries**: add both `-L<dir>` and `-l<name>` (or `.lib`/`.dll.lib` paths on Windows MSVC).
-8. Use repository-relative paths (e.g., `third_party/...`) for vendored dependencies to keep builds hermetic.
+8. Use repository-relative paths for vendored dependencies, for example `third_party/libfoo`, to keep builds hermetic.
 
 ### Runtime Library Resolution
 

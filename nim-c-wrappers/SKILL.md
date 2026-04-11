@@ -73,7 +73,7 @@ Struct types: `object` in C order. Fixed arrays: `array[N, T]`. Pointer+length: 
 
 ### Callbacks
 
-22. Declare callbacks as `proc(...) {.cdecl.}`. Do not pass Nim closures to C.
+22. Declare callbacks as plain C-callable procs such as `proc onEvent(code: cint; userData: pointer) {.cdecl.}`. Do not pass Nim closures to C.
 23. For callback state, use a global table keyed by `userdata`. Ensure Nim data is globally rooted or manually managed.
 
 ### Verification

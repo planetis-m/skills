@@ -6,7 +6,7 @@ description: Write real Nimony plugins with template entrypoints, `Node` input, 
 # Nimony Plugins
 
 Use this skill when writing or reviewing compile-time rewrites for Nimony.
-Plugins are the Nimony replacement for macros. For new compile-time DSL rewrites, use a plugin-backed `template ... {.plugin: "name".}` entrypoint. Do not write Nim macros.
+Plugins are the Nimony replacement for macros. For new compile-time DSL rewrites, use a plugin-backed template such as `template foo*(spec: string): untyped {.plugin: "fooplugin".}`. Do not write Nim macros.
 Current Nimony may still delegate parts of compilation to Nim, but plugin code should target `nimonyplugins.nim`, not Nim macro APIs.
 
 ## Rules
@@ -14,17 +14,17 @@ Current Nimony may still delegate parts of compilation to Nim, but plugin code s
 ### Setup
 
 1. Resolve the nimony executable: `readlink -f "$(command -v nimony)"`.
-2. If it is `.../bin/nimony`, open `../src/nimony/lib/nimonyplugins.nim` from there.
+2. If the resolved path ends with `/bin/nimony`, open `../src/nimony/lib/nimonyplugins.nim` from there.
 3. Otherwise open `src/nimony/lib/nimonyplugins.nim` under the executable's directory.
 4. Compile plugin-backed code with `nimony c`.
 5. If path resolution needs help, add `--path:` pointing to nimony's `src/` directory.
 
 ### End-To-End Shape
 
-6. Expose the rewrite through a public template: `template foo*(...): untyped {.plugin: "fooplugin".}`.
+6. Expose the rewrite through a public template such as `template foo*(spec: string): untyped {.plugin: "fooplugin".}`.
 7. Keep the plugin logic in a separate plugin module.
 8. Start the plugin with `let root = loadPluginInput()`.
-9. Read the relevant input node, build a `Tree`, then finish with `saveTree(resultTree)` or `saveTree(errorTree(...))`.
+9. Read the relevant input node, build a `Tree`, then finish with `saveTree(resultTree)` or `saveTree(errorTree("invalid plugin input"))`.
 10. Keep runtime helpers in the public module. Keep NIF traversal and code generation in the plugin module.
 
 ### Mental Model
@@ -37,7 +37,7 @@ Current Nimony may still delegate parts of compilation to Nim, but plugin code s
 ### Construction
 
 15. `createTree()` creates empty output.
-16. `createTree(kind, children...)` and `createTree(kind, info, children...)` build a validated node in one call.
+16. `createTree(nkCall, callee, arg1, arg2)` and `createTree(nkCall, info, callee, arg1, arg2)` build a validated node in one call.
 17. `withTree(kind, info): body` is the normal way to emit a balanced node.
 18. Use manual `addParLe`/`addParRi` only when conditional structure makes `withTree` awkward.
 19. Constructed trees are validated. Emit balanced trees with the expected child shape for each tag.
@@ -72,7 +72,7 @@ Current Nimony may still delegate parts of compilation to Nim, but plugin code s
 1. Resolve the real API file.
    Open the `nimonyplugins.nim` used by the exact `nimony` you will run.
 2. Decide the public entrypoint.
-   Export a `template ... {.plugin: "name".}` from the user-facing module.
+   Export a template such as `template foo*(spec: string): untyped {.plugin: "fooplugin".}` from the user-facing module.
 3. Read the plugin input.
    `loadPluginInput()` gives you the input root as `Node`.
 4. Parse before generating when that simplifies the rewrite.
@@ -80,7 +80,7 @@ Current Nimony may still delegate parts of compilation to Nim, but plugin code s
 5. Build output in one `Tree`.
    Use `withTree`, subtree reuse, and helper procs that append into `var Tree`.
 6. Finish explicitly.
-   End with `saveTree(resultTree)` or `saveTree(errorTree(...))`.
+   End with `saveTree(resultTree)` or `saveTree(errorTree("invalid plugin input"))`.
 
 ## Common Mistakes
 
@@ -93,7 +93,7 @@ Current Nimony may still delegate parts of compilation to Nim, but plugin code s
 | Confusing `takeTree` with `addSubtree` | One advances the reader and the other does not |
 | Snapshotting an empty tree | `snapshot(tree)` asserts on empty input |
 | Rebuilding correct input subtrees atom by atom | It is slower, noisier, and easier to get wrong than subtree reuse |
-| Crashing on invalid plugin input | Emit `errorTree(...)` so the compiler reports a source-level plugin error |
+| Crashing on invalid plugin input | Emit `errorTree("invalid plugin input")` so the compiler reports a source-level plugin error |
 
 ## References
 
