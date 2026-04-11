@@ -1,6 +1,6 @@
 ---
 name: nimonyplugins
-description: Write real Nimony plugins with template entrypoints, `Node` input, `Tree` output, and `saveTree`/`errorTree` completion.
+description: Write and debug Nimony plugins for compile-time code generation and DSL rewrites, including plugin-backed templates, `Node` traversal, `Tree` construction, subtree reuse, and source-level plugin errors. Use when replacing Nim macros with Nimony plugins or building a compile-time rewrite in the Nimony plugin system.
 ---
 
 # Nimony Plugins
