@@ -1,259 +1,96 @@
 ---
 name: nim-style-guide
-description: Enforce idiomatic, readable Nim with formatting, naming, call-style, control-flow, and local declaration conventions.
+description: Write Nim in a simple, stdlib-aligned style with static helpers, clear control flow, and low formatting noise.
 ---
 
-# Nim Style Guide
+# Preamble
 
-Use this guide when writing or refactoring Nim.
-Keep it focused on readability, consistency, and presentation.
+Use this skill to keep Nim code simple, consistent, and easy to scan.
+Larger examples live under `references/`.
 
-## Non-negotiable rules
+# Rules
 
-- `continue` is banned.
-- Nested `type` declarations are banned.
-- Do not use early `return` only to reduce nesting.
-- Do not rewrite normal helper procs into templates unless the helper is a single expression.
-- If a helper uses `if`, `case`, loops, `try`, or `block`, it must be a `proc`.
+## Formatting
 
-## 1. Formatting
+- Indent with 2 spaces. Do not use tabs.
+- Wrap long lines before they become hard to scan.
+- Do not align columns with extra spaces.
+- Use `a..b` unless spaces are needed for clarity.
+- Indent wrapped declarations, calls, and conditions one extra level.
 
-### Rules
+## Imports And Naming
 
-- Indent with 2 spaces. No tabs.
-- Keep lines reasonably short (target <= 100 chars; prefer about 90-100).
-- Do not manually align columns with extra spaces.
-- Use `a..b` (not `a .. b`) unless spacing is needed for clarity with unary operators.
-- For wrapped declarations and conditions, indent continuation lines one extra level.
-  Use +4 spaces relative to the wrapped line's base indent.
+- Prefer `std/...` imports for stdlib modules.
+- Group broad stdlib imports with `import std/[a, b, c]`.
+- Use `from std/foo import bar, baz` when you only need a small API slice.
+- Types use `PascalCase`.
+- Procs, funcs, iterators, templates, vars, and fields use `camelCase`.
+- Use normal word casing such as `parseUrl` and `httpStatus`.
+- For non-pure enums, prefix values such as `pcFile`. For pure enums, use `PascalCase`.
 
-### Do
-
-```nim
-type
-  Handle = object
-    fd: int
-    valid: bool
-```
-
-```nim
-proc enterDrainErrorMode(ctx: NetworkWorkerContext; message: string;
-    multi: var CurlMulti; active: var Table[uint, RequestContext];
-    retryQueue: var seq[RetryItem]; idleEasy: var seq[CurlEasy]) =
-  discard
-```
-
-```nim
-if WebPConfigInitInternal(addr config, WEBP_PRESET_DEFAULT, quality,
-    WEBP_ENCODER_ABI_VERSION) == 0:
-  raise newException(ValueError, "WebPConfigInitInternal failed")
-```
-
-### Don't
-
-```nim
-type
-  Handle    = object
-    fd       : int
-    valid    : bool
-```
-
-```nim
-proc enterDrainErrorMode(ctx: NetworkWorkerContext; message: string;
-  multi: var CurlMulti; active: var Table[uint, RequestContext];
-  retryQueue: var seq[RetryItem]; idleEasy: var seq[CurlEasy]) =
-  discard
-```
-
-```nim
-if WebPConfigInitInternal(addr config, WEBP_PRESET_DEFAULT, quality,
-  WEBP_ENCODER_ABI_VERSION) == 0:
-  raise newException(ValueError, "WebPConfigInitInternal failed")
-```
-
-## 2. Naming
-
-### Rules
-
-- Types: `PascalCase`.
-- Procs, templates, vars, and fields: `camelCase`.
-- Enum values: prefixed for non-pure enums (`pcFile`), PascalCase for pure enums.
-- Use normal word casing: `parseUrl`, `httpStatus`.
-- Prefer subject-verb names: `fileExists`, not `existsFile`.
-
-### Do
-
-```nim
-type
-  PathComponent = enum
-    pcFile
-    pcDir
-
-proc fileExists(path: string): bool = discard
-```
-
-### Don't
-
-```nim
-proc existsFile(path: string): bool = discard
-proc parseURL(text: string): string = discard
-```
-
-## 3. Proc Style and Call Style
-
-### Rules
+## Proc, Func, Template, Macro
 
 - Default to `proc`.
-- `template` is allowed only for tiny expression substitutions.
-- A template body should be exactly one expression.
-- Never use expression templates with `block:` wrappers to hide statements.
+- Use `func` for pure helpers and pure accessors when checked purity helps.
+- Use `template` only for tiny substitutions or tiny syntax wrappers.
+- If a helper has its own control flow or mutable local state, make it a `proc` or `func`.
+- Prefer `proc` and `func` over `method`. Use `method` only when you need runtime dispatch.
+- Prefer top-level helpers for reusable logic.
+- Use a nested proc when the logic is truly local or when you want a closure.
+- A nested proc may capture outer locals. If a nested proc must stay non-capturing, mark it `{.nimcall.}`.
 - Use `macro` only when syntax transformation is required.
-- For multi-line calls, prefer compact wrapped calls over one-argument-per-line blocks.
-- This call-formatting rule is for proc and function calls, not object constructors.
-- Prefer UFCS for accessor-style APIs when it reads like field access (`bitmap.width`).
 
-### Do
+## Calls, Locals, And Types
 
-```nim
-finalizeOrRetry(ctx, retryQueue, rng, req.task, req.attempt,
-  retryable = true, kind = NetworkError,
-  message = boundedErrorMessage(getCurrentExceptionMsg()))
-```
-
-```nim
-proc readBitmapMetrics(bitmap: PdfBitmap): tuple[w, h: int] =
-  result = (bitmap.width, bitmap.height)
-```
-
-### Don't
-
-```nim
-template nextReady(): bool =
-  (block:
-    let idx = slotIndex(nextToWrite, k)
-    pending[idx].isSome() and pending[idx].get() == nextToWrite
-  )
-```
-
-```nim
-finalizeOrRetry(
-  ctx,
-  retryQueue,
-  rng,
-  req.task,
-  req.attempt,
-  retryable = true,
-  kind = NetworkError,
-  message = boundedErrorMessage(getCurrentExceptionMsg())
-)
-```
-
-## 4. Control Flow and Returns
-
-### Rules
-
-- Prefer structured control flow (`if/elif/else`, explicit loop conditions).
-- `continue` is banned; structure branches instead.
-- Use early `return` for real guard exits (found, fatal, precondition), not as default style.
-- Do not early-return for empty or zero normal inputs; keep one normal flow and let loop bounds naturally produce empty output.
-- Keep one clear normal success path.
-- Use `result = ...` for normal flow.
-- Keep return style consistent inside each proc.
-
-### Do
-
-```nim
-proc findUser(users: seq[string]; target: string): int =
-  for i, user in users:
-    if user == target:
-      return i
-  result = -1
-```
-
-```nim
-proc process(values: seq[int]): int =
-  for value in values:
-    if value >= 0:
-      result.inc(value)
-```
-
-```nim
-proc allPagesSelection(totalPages: int): seq[int] =
-  result = @[]
-  for page in 1 .. totalPages:
-    result.add(page)
-```
-
-### Don't
-
-```nim
-proc process(values: seq[int]): int =
-  for value in values:
-    if value < 0:
-      continue
-    result.inc(value)
-```
-
-```nim
-proc allPagesSelection(totalPages: int): seq[int] =
-  if totalPages <= 0:
-    return @[]
-  result = newSeqOfCap[int](totalPages)
-  for page in 1 .. totalPages:
-    result.add(page)
-```
-
-## 5. Type Presentation
-
-### Rules
-
-- Never declare `type` blocks inside procs.
-- Group related fields with the same type when it improves readability (`a, b: int`).
-- Prefer object-construction syntax (`TypeName(field: ...)`) over field-by-field `result.field = ...`.
-
-### Do
-
-```nim
-type
-  OrchestratorState = object
-    written, okCount, errCount: int
-    nextToRender, nextToWrite: int
-```
-
-```nim
-proc initWorkerState(seed: int): WorkerState =
-  WorkerState(
-    active: initTable[uint, RequestContext](),
-    retryQueue: @[],
-    idleEasy: @[],
-    rng: initRand(seed),
-    stopRequested: false
-  )
-```
-
-### Don't
-
-```nim
-proc initWorkerState(seed: int): WorkerState =
-  result.active = initTable[uint, RequestContext]()
-  result.retryQueue = @[]
-  result.idleEasy = @[]
-  result.rng = initRand(seed)
-  result.stopRequested = false
-```
-
-## 6. Local Declarations and Imports
-
-### Rules
-
+- Prefer compact wrapped calls over one-argument-per-line call blocks.
+- Use UFCS when it reads like an accessor.
 - Use `let` by default.
-- Use `var` only for mutated values.
-- Keep declarations close to first use.
-- Prefer `std/...` imports for standard library modules.
+- Use `var` only for values that mutate.
+- Keep local declarations close to first use.
+- Keep `type` blocks at module scope.
+- Group related fields with the same type when it improves readability.
+- When using object constructors, set the fields you want to override and omit the fields that should keep their defaults.
 
-### Do
+## Control Flow
 
-```nim
-let page = pages[idx]
-var attempts = 0
-```
+- Prefer straightforward `if/elif/else` and explicit loop conditions.
+- Tiny predicate or search helpers may use early `return`.
+- In stateful or multi-step procs, keep one clear normal path and use `result = ...` when that reads more clearly.
+- Use early `return` for real guard exits or found values, not as the default shape of every branch.
+- Do not use `continue`. Restructure the branch instead.
+
+# Workflow
+
+1. Pick the callable kind.
+   Start with `proc`. Switch to `func` only for pure helpers. Use `template` or `macro` only when substitution or syntax shaping is the point. Do not use `method` unless you need runtime dispatch.
+2. Write imports and names.
+   Use `std/...` imports, narrow imports when practical, and keep names in normal Nim casing.
+3. Shape the control flow.
+   Keep one obvious normal path. Use guard returns only when they make the code simpler.
+4. Clean up locals and constructors.
+   Use `let` by default, keep locals near first use, keep reusable helpers at module scope, and let constructors keep declaration defaults unless you are overriding them.
+5. Remove noise.
+   Remove unused imports, dead helpers, column alignment, and stretched call formatting.
+
+# Common Mistakes
+
+| Mistake | Why it is wrong |
+|---------|-----------------|
+| Using `method` as the default callable kind | It adds runtime dispatch where a plain `proc` or `func` would usually be clearer. |
+| Hiding reusable helpers inside another proc | It makes the helper harder to reuse and easier to turn into an accidental closure. |
+| Using `template` for general helper logic | It hides normal control flow and expands code in place. |
+| Using `proc` for an obviously pure helper | It loses a useful compiler-checked purity signal. |
+| Writing one argument per line by default | It adds vertical noise without adding structure. |
+| Using `var` for values that never mutate | It hides which locals actually change. |
+| Turning every branch into an early `return` in a multi-step proc | It makes the normal path harder to scan. |
+| Using `continue` | It usually means the branch can be written more clearly. |
+| Restating every object field in a constructor | It adds noise and can hide which fields are intentionally overridden. |
+
+# References
+
+- `references/core_patterns.md`: Simple default patterns for imports, callable kinds, wrapping, locals, and constructors.
+
+# Changelog
+
+- 2026-04-11: Refined the guide around Zen of Nim and stdlib defaults. Added explicit guidance for `func` as a checked purity contract and `proc`/`func` over `method` for ordinary helpers. Simplified wording throughout.
+- 2026-04-09: Added the in-repo verified `nim-style-guide` skill as a standalone, opinionated style guide.

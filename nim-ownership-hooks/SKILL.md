@@ -1,257 +1,143 @@
 ---
 name: nim-ownership-hooks
-description: Design, review, and implement Nim ARC/ORC ownership hooks and move semantics for value types, containers, shared handles, and manually allocated storage. Use when Codex works on `=destroy`, `=wasMoved`, `=sink`, `=copy`, `=dup`, `=trace`, `sink` parameters, `lent` accessors, or ARC/ORC ownership bugs and warnings in Nim code.
+description: Design, review, and implement Nim ARC/ORC ownership hooks and move semantics.
 ---
 
-# Nim Ownership Hooks and Move Semantics
+# Nim Ownership Hooks
 
-Use this skill when editing or reviewing Nim ownership hooks under ARC/ORC.
-Start by classifying the type's ownership model, then implement only the hook set that model actually needs, while preserving the codebase's local style.
+## 1. Preamble
 
-## Default stance
+Use this skill when editing or reviewing Nim ownership hooks under ARC or ORC. Start by classifying the type's ownership model, then implement only the hook set that model needs.
 
-Most types do **not** need a custom `=destroy`.
-Do not write ownership hooks unless the type owns a resource the compiler cannot release on its own.
+Extended examples for each ownership model live in `references/`.
+For shared / refcounted types in this repo, prefer one consistent default: the inverted counter convention from the local `cowstrings` project (`counter == 0` unique, `counter > 0` shared).
 
-The compiler auto-manages destruction for primitives, `string`, `seq[T]`, `ref T`, `array`, tuples, closures, and objects whose fields are all auto-managed.
-It also lifts hooks through arbitrary nesting: if a field's type already has custom hooks, the enclosing type gets correct compiler-generated hooks for free.
+## 2. Rules
 
-Custom hooks are needed when the type holds a resource the compiler cannot release:
-raw pointers (`ptr T`) to manually allocated memory, OS file descriptors or socket handles, distinct types used as handles, or any other non-managed resource.
+**Do not write hooks unless the type owns a resource the compiler cannot release.** The compiler auto-manages `string`, `seq[T]`, `ref T`, `array`, tuples, closures, and objects whose fields are all auto-managed. Hooks lift through nesting — if a field has custom hooks, the enclosing type gets correct auto-generated hooks for free.
 
-## Workflow
+Custom hooks are needed only for: raw pointers (`ptr T`) to manually allocated memory, OS file descriptors, distinct-type handles, or any non-managed resource.
 
-1. Classify the type.
-2. Check whether hooks are already declared and whether declaration order is legal.
-3. Choose the minimal correct hook set.
-4. Implement the hooks without bypassing child ownership semantics.
-5. Verify with focused compile and runtime tests.
+### Hook signatures
 
-## Classify the type first
+| Hook | Signature | Key rule |
+|------|-----------|----------|
+| `=destroy` | `proc \`=destroy\`*(x: T)` | **Use `T`, not `var T`.** Check sentinel (`nil`) before accessing fields. |
+| `=wasMoved` | `proc \`=wasMoved\`*(x: var T)` | Sets fields to default state. The compiler then eliminates the subsequent destroy call entirely. |
+| `=sink` | `proc \`=sink\`*(dest: var T; src: T)` | Destroy dest, transfer fields. No self-assignment check needed. |
+| `=copy` | `proc \`=copy\`*(dest: var T; src: T)` | Deep-copy types: must have self-assignment protection. Preferred inverted refcounted types: destroy then share. Move-only: use bare `{.error.}`. |
+| `=dup` | `proc \`=dup\`*(src: T): T` | Deep-copy containers: use `{.nodestroy.}`. Preferred inverted refcounted types: share and increment. |
+| `=trace` | `proc \`=trace\`*(x: var T; env: pointer)` | Only for ORC + manually allocated containers with ref-type elements. Forward-declare alongside `=destroy`. |
 
-Choose the hook set from the type's real ownership model before editing anything:
+### Declaration order
 
-- Plain value or compiler-managed aggregate:
-  No custom hooks. The compiler lifts destruction recursively through fields.
-- Borrowing or view type:
-  Usually no custom hooks. Prefer `lent` results for immutable accessors.
-- Move-only owner:
-  Implement `=destroy` and `=wasMoved`. This is the common model for manually allocated buffers and other exclusive resources. Add `=sink` only when compiler-generated sink is not acceptable. Mark `=copy` and often `=dup` as `.error.`.
-- Deep-owning container:
-  Implement `=destroy`, `=wasMoved`, `=copy`, and `=dup`. This is the model for containers that manually allocate backing storage and own their elements. Add `=sink` only when direct field transfer is required by semantics or style.
-- Shared or refcounted handle:
-  `=copy` and `=dup` usually retain or share a payload instead of deep-copying it.
+Declare hooks **before** any proc that mentions the type — including `=dup`, whose body can trigger implicit `=copy` generation. Safe order:
 
-Do not force one ownership model onto another. A shared handle should not become move-only just because it has a destructor, and a deep-owning container should not pretend copies are cheap shares unless that is the real design.
-
-## Hook signatures
-
-These are the relevant hook shapes:
-
-```nim
-proc `=destroy`*(x: T)
-proc `=wasMoved`*(x: var T)
-proc `=sink`*(dest: var T; src: T)
-proc `=copy`*(dest: var T; src: T)
-proc `=dup`*(src: T): T
-proc `=trace`*(x: var T; env: pointer)
+```
+type T = object ...
+proc `=destroy`*(x: T) = ...
+proc `=wasMoved`*(x: var T) = ...
+proc `=copy`*(dest: var T; src: T) = ...
+proc `=dup`*(src: T): T = ...     # after =copy to avoid conflicts
 ```
 
-Export custom ownership hooks. In this codebase, destructors must be exported. Treat missing export on a custom hook as a bug.
+Templates are safe between type and hooks. Generics used before their hooks trigger compiler errors.
 
-Use `=trace` only for ORC-aware manually allocated containers that can participate in cycles.
+### Move semantics
 
-## Canonical patterns
+- `move(x)` forces move. Source left in moved-from state.
+- `ensureMove(x)` is a compile-time annotation for rvalues and sink params. Fails for lvalues with destructors.
+- `sink` parameters are **affine**: callee may or may not consume.
+- Object and tuple fields are separate entities for sink last-use analysis.
+- Compiler inserts `=copy`/`=dup` when sink argument is not last use.
+- Compiler synthesizes `=sink` from `=destroy` + `copyMem` when no custom `=sink` provided.
 
-### `=destroy`
+### Edge cases
 
-- Release only resources the object still owns.
-- Check the moved-from sentinel first, usually `nil` or a default handle.
-- Destroy nested values before freeing raw storage.
-- Keep destructor behavior non-raising in practice.
-- Remember that proc-typed callbacks called from a destructor may still need `raises: []`.
+- **Zero-length allocations**: Guard against `alloc(0)` in constructors and `=copy`. Only allocate when length is positive.
+- **Preferred shared convention**: In this repo, use the inverted counter pattern consistently for refcounted payloads.
+- **Thread-aware allocation**: When the payload may cross thread boundaries, keep allocator switching local with `when compileOption("threads")`.
 
-Canonical shape:
+## 3. Workflow
 
-```nim
-proc `=destroy`*(x: T) =
-  if x.data != nil:
-    for i in 0..<x.len:
-      `=destroy`(x.data[i])
-    dealloc(x.data)
-```
+### Step 1: Classify the ownership model
 
-### `=wasMoved`
+| Model | Hooks needed |
+|-------|-------------|
+| Plain / auto-managed | None |
+| Borrowing / view | None. Use `lent T` for accessors. |
+| Move-only owner | `=destroy`, `=wasMoved`, `=copy` as `{.error.}` |
+| Deep-owning container | `=destroy`, `=wasMoved`, `=copy`, `=dup` |
+| Shared / refcounted | `=destroy`, `=wasMoved`, `=dup`, `=copy`. Prefer the inverted counter pattern and test alias assignment plus detach-on-mutation. |
 
-- Reset the fields that make `=destroy` a no-op.
-- Set the smallest faithful moved-from state.
+### Step 2: Implement the minimal hook set
 
-Canonical shape:
-
-```nim
-proc `=wasMoved`*(x: var T) =
-  x.data = nil
-```
-
-### `=sink`
-
-- Do not add a custom `=sink` by default.
-- The compiler can synthesize sink from `=destroy` plus a raw move, and that is often good enough.
-- When a custom `=sink` is required, destroy the destination first and then transfer fields directly.
-- Do not add self-assignment checks to `=sink`.
-- Do not bypass child hook semantics with `copyMem` or whole-object raw moves unless that behavior is explicitly intended and safe for the type.
-
-Canonical shape:
+For each model, see `references/` for complete examples. Inline example — preferred inverted refcounted handle:
 
 ```nim
-proc `=sink`*(dest: var T; src: T) =
+proc `=destroy`*(x: Handle) =
+  if x.p != nil:
+    if x.p.counter == 0:
+      dealloc(x.p)
+    else:
+      dec x.p.counter
+
+proc `=wasMoved`*(x: var Handle) =
+  x.p = nil
+
+template share(dest, src) =
+  if src.p != nil: inc src.p.counter
+  dest.p = src.p
+
+proc `=dup`*(src: Handle): Handle =
+  share(result, src)
+
+proc `=copy`*(dest: var Handle; src: Handle) =
   `=destroy`(dest)
-  dest.len = src.len
-  dest.cap = src.cap
-  dest.data = src.data
+  share(dest, src)
 ```
 
-If the destination has fields that are not fully overwritten after `=destroy`, reset it with `=wasMoved(dest)` or assign a default state before rebuilding it.
+If the surrounding codebase already uses a 1-based counter, preserve that convention consistently instead of mixing both styles.
 
-### `=copy`
+### Step 3: Verify with `--expandArc`
 
-- Protect against self-assignment.
-- Destroy old destination contents before cloning ownership from the source.
-- For move-only types, prefer `{.error.}` instead of inventing partial copy semantics.
-
-Canonical deep-copy shape:
-
-```nim
-proc `=copy`*(dest: var T; src: T) =
-  if dest.data != src.data:
-    `=destroy`(dest)
-    `=wasMoved`(dest)
-    dest.len = src.len
-    dest.cap = src.cap
-    if src.data != nil:
-      dest.data = cast[typeof(dest.data)](alloc(dest.cap * sizeof(Elem)))
-      for i in 0..<dest.len:
-        dest.data[i] = src.data[i]
+```bash
+nim c --expandArc:nameOfFunction yourfile.nim
 ```
 
-Move-only form:
+Shows every hook the compiler inserts. Confirm synthesized hooks match intent.
 
-```nim
-proc `=copy`*(dest: var T; src: T) {.error.}
-```
+### Step 4: Run stress tests
 
-### `=dup`
+Test: move, overwrite, copy independence, dup independence, destroy-after-move, self-copy, sink from temporaries, zero-length initialization.
 
-- Use `=dup` as an optimized duplication path when `=copy` is custom or expensive.
-- For deep-owning containers, `=dup` usually allocates fresh storage and duplicates each live element.
-- For shared handles, `=dup` usually retains or increments a reference count.
-- Keep the implementation aligned with local style.
+## Common mistakes
 
-Canonical deep-dup shape:
+| Mistake | Why wrong |
+|---------|-----------|
+| `=destroy` with `var T` | Both compile, but `T` prevents accidental field mutation. |
+| Setting fields to nil inside `=destroy` | Use `=wasMoved` for that. |
+| Declaring `=dup` before `=copy` | `=dup` body can trigger implicit `=copy` → conflict. |
+| Missing self-assignment guard in deep-copy `=copy` | Destroys source before reading. |
+| Self-assignment check in `=sink` | Compiler eliminates simple self-assignments. |
+| Missing `{.nodestroy.}` on deep-copy `=dup` | Compiler destroys result before return. |
+| Custom `=sink` when synthesized is fine | Unnecessary complexity. |
+| `copyMem` in `=sink` bypassing child hooks | Breaks ownership chain. |
+| Missing zero-length guard | `alloc(0)` + indexing crashes. |
+| `ensureMove` on lvalue with destructor | Compile error. |
+| `alloc` in multi-threaded code | Must use `allocShared`/`deallocShared`. |
 
-```nim
-proc `=dup`*(src: T): T {.nodestroy.} =
-  result = T(len: src.len, cap: src.cap, data: nil)
-  if src.data != nil:
-    result.data = cast[typeof(result.data)](alloc(result.cap * sizeof(Elem)))
-    for i in 0..<result.len:
-      result.data[i] = `=dup`(src.data[i])
-```
+## References
 
-### `=trace`
+- `references/move_only_owner.md` — exclusive resource ownership
+- `references/deep_owning_container.md` — manual allocation with deep copy
+- `references/shared_refcounted.md` — refcounted handle (repo default first, compatibility note second)
+- `references/cow_string.md` — copy-on-write string adapted from the local `cowstrings` project
+- `references/custom_sink.md` — when and how to write a custom `=sink`
 
-Add `=trace` only when all of these are true:
-
-- the type manually owns storage
-- stored values can participate in ORC cycles
-- ORC should be able to traverse them
-
-Canonical shape:
-
-```nim
-proc `=trace`*(x: var T; env: pointer) =
-  if x.data != nil:
-    for i in 0..<x.len:
-      `=trace`(x.data[i], env)
-```
-
-## Move semantics rules that matter in reviews
-
-- A move is an optimized copy when the source is not used afterward.
-- `move(x)` forces move semantics.
-- `ensureMove(x)` checks that the compiler can prove a move is legal.
-- `sink` parameters are affine, not linear:
-  the callee may consume the value once, or not at all.
-- If the compiler cannot prove an argument to a `sink` parameter is the last use, it may duplicate before passing it.
-
-Important consequence:
-
-- `=copy` needs self-assignment protection.
-- `=sink` does not.
-
-Simple self-assignments like `x = x` are removed by the compiler.
-
-## `lent`
-
-Use `lent T` for immutable accessors that should borrow from a container instead of copying.
-
-Example:
-
-```nim
-proc `[]`(x: MyContainer; i: int): lent Elem =
-  x.data[i]
-```
-
-Prefer `lent` over manufacturing cheap-looking copies of owned elements.
-
-## Hook declaration ordering
-
-Declare custom hooks before any Nim-defined procs, converters, iterators, closures, or
-generic instantiations that mention the type.
-The compiler eagerly generates implicit hooks for many Nim proc signatures and will error
-if a custom hook appears afterward.
-`importc` procs are opaque to the compiler and do not trigger implicit hook generation,
-so they may safely appear before the hooks.
-
-Only templates may safely appear between the type definition and the hooks.
-If a hook body needs a shared helper, write it as a small template directly before the hooks.
-
-## Common review traps
-
-- Adding custom hooks to a type whose fields are all auto-managed or already have their own hooks.
-- Assuming manually owned raw storage is freed automatically because the enclosing object gets destroyed.
-- Adding a custom `=sink` when compiler-generated sink was fine.
-- Adding self-assignment checks to `=sink`.
-- Using `copyMem` or whole-object raw moves in a custom `=sink` and bypassing child hook semantics.
-- Forgetting `=wasMoved` for move-only owners.
-- Forgetting self-assignment protection in `=copy`.
-- Removing `raises: []` from a proc-typed destructor callback without intending to change effects.
-- Declaring helper procs before the hooks and triggering the phase-order problem.
-- Adding speculative branches such as special zero-count allocation handling without evidence they are needed.
-
-## Review checklist
-
-- Does the hook set match the type's ownership model?
-- Is the type move-only, deep-copying, shared, or borrowing?
-- Are hooks declared before first use sites that trigger hook generation?
-- Does `=destroy` free only still-owned resources?
-- Does `=wasMoved` make `=destroy` a no-op?
-- Does custom `=sink` transfer ownership directly without self-assignment checks?
-- Does `=copy` protect against self-assignment and preserve semantics?
-- Does `=dup` match the ownership model?
-- Does `=trace` exist only when ORC cycle traversal actually matters?
-- Did the patch preserve the surrounding style?
-
-## Verification after every hook edit
-
-Compile and run the smallest relevant test target immediately after editing hooks.
-For container-like types, prefer tests that cover:
-
-- move into another variable
-- overwrite of existing owned data
-- copy independence
-- dup independence
-- destroy-after-move
-- sink assignment from temporaries
-
-If the compiler emits ARC/ORC warnings, either fix the ownership cause or document why the warning is acceptable in that codebase.
+## Changelog
+- 2026-04-07: Initial version
+- 2026-04-07: Added zero-length guards, non-var destroy preference
+- 2026-04-07: Added refcounted nuances from cowstrings analysis
+- 2026-04-08: Restructured — examples moved to references/, workflow-focused SKILL.md
+- 2026-04-08: Standardized shared-ownership guidance on the inverted counter convention and separated future benchmark tasks by convention
