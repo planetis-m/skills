@@ -1,6 +1,6 @@
 ---
 name: nim-error-handling
-description: Design Nim exception boundaries, translation, retry classification, and parse-failure behavior.
+description: Design clear Nim error-handling flows, including when to raise exceptions, when to return `Option` or `bool`, how to define `raises` contracts, and where to translate, retry, or record failures. Use when reviewing failure behavior, parse errors, exception boundaries, or batch processing that needs per-item error reporting.
 ---
 
 # Nim Error Handling

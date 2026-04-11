@@ -1,6 +1,6 @@
 ---
 name: nim-doc-comments
-description: Write Nim doc comments in the standard source layout and verify rendered docs with `nim doc`.
+description: Document exported Nim modules and APIs with doc comments that `nim doc` actually picks up, including module docs, proc and type docs, field docs, and runnable examples. Use when writing documentation for a Nim library or fixing docs that are missing, attached to the wrong symbol, or rendering incorrectly.
 ---
 
 # Nim Doc Comments

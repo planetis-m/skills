@@ -1,6 +1,6 @@
 ---
 name: nim-c-bindings
-description: Prescriptive rules for portable Nim-to-C bindings (importc, linking, rpath, platform quirks) plus complete, copy-paste-ready GitHub Actions CI/release workflows for cross-platform Nim projects (Linux, macOS, Windows).
+description: Bind C libraries to Nim and make them build reliably across Linux, macOS, and Windows, including headers, types, linking, shared-library loading, and CI/release workflows. Use when wrapping a C dependency, fixing Nim FFI build issues, or setting up cross-platform GitHub Actions for a Nim native library project.
 ---
 
 # Nim C Bindings & CI

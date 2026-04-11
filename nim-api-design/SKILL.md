@@ -1,6 +1,6 @@
 ---
 name: nim-api-design
-description: Design Nim public APIs with plain data, static dispatch, clear contracts, and stdlib-aligned names.
+description: Design clear public Nim APIs for libraries and modules, including exported types, constructors, lookup functions, error contracts, and container-style interfaces. Use when creating or reviewing a Nim library API, designing an exported module surface, or deciding how callers should construct, access, and validate data.
 ---
 
 # Nim API Design

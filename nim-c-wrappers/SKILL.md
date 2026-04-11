@@ -1,6 +1,6 @@
 ---
 name: nim-c-wrappers
-description: Guidelines for building idiomatic Nim wrappers on top of C FFI bindings.
+description: Turn low-level C FFI bindings into an idiomatic Nim API, with safer types, cleaner module boundaries, resource management, callbacks, enums, bitflags, and exception-based error handling. Use when building a high-level Nim wrapper around a C library or improving the usability of existing raw bindings.
 ---
 
 # Nim C Wrappers

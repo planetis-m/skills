@@ -1,6 +1,6 @@
 ---
 name: nim-ownership-hooks
-description: Design, review, and implement Nim ARC/ORC ownership hooks and move semantics.
+description: Implement and review Nim ARC/ORC ownership hooks for types that manually manage resources, including move-only, deep-copy, refcounted, and copy-on-write patterns. Use when a Nim type owns pointers, buffers, file descriptors, or custom heap memory and you need correct `=destroy`, `=copy`, `=dup`, `=sink`, or move semantics.
 ---
 
 # Nim Ownership Hooks

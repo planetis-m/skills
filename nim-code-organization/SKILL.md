@@ -1,6 +1,6 @@
 ---
 name: nim-code-organization
-description: Organize Nim modules around explicit state, top-level procs, narrow exports, and simple orchestration flow.
+description: Organize Nim code into clear modules and multi-step workflows, with explicit state, top-level helper procs, narrow exports, and easy-to-follow orchestration. Use when refactoring a large Nim file, splitting logic across modules, designing parser-style stateful code, or cleaning up nested helpers and hidden mutable state.
 ---
 
 # Nim Code Organization
