@@ -11,24 +11,24 @@ Rules for writing portable Nim-to-C bindings and cross-platform CI/release workf
 
 ### Binding Fundamentals
 
-1. Use `importc` with `callconv: cdecl` for C APIs unless the library explicitly requires a different calling convention (e.g., `stdcall`).
-2. Represent opaque C handles as `type Name = ptr object` types. Use `incompleteStruct` for partial/opaque structs to avoid size/layout mismatches.
-3. Use `{.bycopy.}` on structs that Nim must pass by value to C.
-4. Declare the C header in the binding when the compiler needs the C definitions for compilation, for example `header: "foo.h"`.
-5. Use `{.push callconv: cdecl, header: "foo.h".}` blocks when many declarations share the same convention and header.
+- Use `importc` with `cdecl` for C APIs unless the library explicitly requires a different calling convention (e.g., `stdcall`).
+- Represent opaque C handles as `type Name = ptr object` types. Use `incompleteStruct` for partial/opaque structs to avoid size/layout mismatches.
+- Use `{.bycopy.}` on structs that Nim must pass by value to C.
+- Declare the C header in the binding when the compiler needs the C definitions for compilation, for example `header: "foo.h"`.
+- Use `{.push callconv: cdecl, header: "foo.h".}` blocks when many declarations share the same convention and header.
 
 ### Linking
 
-6. **System libraries**: link with `-l<name>` only. Do not hardcode `-L` paths — the OS toolchain already knows where system libs live.
-7. **Local/third-party libraries**: add both `-L<dir>` and `-l<name>` (or `.lib`/`.dll.lib` paths on Windows MSVC).
-8. Use repository-relative paths for vendored dependencies, for example `third_party/libfoo`, to keep builds hermetic.
+- **System libraries**: link with `-l<name>` only. Do not hardcode `-L` paths — the OS toolchain already knows where system libs live.
+- **Local/third-party libraries**: add both `-L<dir>` and `-l<name>` (or `.lib`/`.dll.lib` paths on Windows MSVC).
+- Use repository-relative paths for vendored dependencies, for example `third_party/libfoo`, to keep builds hermetic.
 
 ### Runtime Library Resolution
 
-9. **Vendored/local shared libs**: colocate the `.so`/`.dylib`/`.dll` next to the executable. Do not rely on environment variables for discovery.
-10. **System-installed libs**: do not copy DLLs/shared libs next to the executable. Rely on the platform's normal system loader configuration. Use environment variables only as temporary overrides.
-11. On Linux, add rpath `$ORIGIN` only when loading colocated shared libs. From the shell, pass `--passL:"-Wl,-rpath,\$ORIGIN"`. In Nim source, use `{.passL: "-Wl,-rpath,\\$ORIGIN".}`.
-12. Do not use build-tree-only rpaths or absolute paths to non-system shared libraries.
+- **Vendored/local shared libs**: colocate the `.so`/`.dylib`/`.dll` next to the executable. Do not rely on environment variables for discovery.
+- **System-installed libs**: do not copy DLLs/shared libs next to the executable. Rely on the platform's normal system loader configuration. Use environment variables only as temporary overrides.
+- On Linux, add rpath `$ORIGIN` only when loading colocated shared libs. From the shell, pass `--passL:"-Wl,-rpath,\$ORIGIN"`. In Nim source, use `{.passL: "-Wl,-rpath,\\$ORIGIN".}`.
+- Do not use build-tree-only rpaths or absolute paths to non-system shared libraries.
 
 ### Platform Rules
 
@@ -38,17 +38,17 @@ Rules for writing portable Nim-to-C bindings and cross-platform CI/release workf
 | macOS | Apple Clang | Homebrew | `staticExec("brew --prefix")` for `-I`/`-L` | Colocate local `.dylib` |
 | Windows | MSVC (`--cc:vcc`) | vcpkg only | `.lib`/`.dll.lib` full paths | Colocate `.dll` next to `.exe` |
 
-13. On macOS, resolve include/link paths via `staticExec("brew --prefix <formula>")`.
-14. On Windows, use MSVC via `--cc:vcc`. Use vcpkg only — avoid Chocolatey and MSYS2. Never mix toolchains.
-15. On Windows, do not rely on implicit `-l<name>` for MSVC. Use explicit `.lib` or `.dll.lib` paths.
-16. On Windows CI, export `VCPKG_ROOT` to the installed triplet root and prepend its `bin` to `PATH`.
+- On macOS, resolve include/link paths via `staticExec("brew --prefix <formula>")`.
+- On Windows, use MSVC via `--cc:vcc`. Use vcpkg only — avoid Chocolatey and MSYS2. Never mix toolchains.
+- On Windows, do not rely on implicit `-l<name>` for MSVC. Use explicit `.lib` or `.dll.lib` paths.
+- On Windows CI, export `VCPKG_ROOT` to the installed triplet root and prepend its `bin` to `PATH`.
 
 ### CI & Release
 
-17. CI is the authoritative spec for supported platforms, toolchains, and flags. Local workflows must be compatible with CI.
-18. Keep test builds simple: compile, then run, with minimal environment mutation.
-19. Align the local toolchain with CI (e.g., MSVC + vcpkg `x64-windows-release` with `--cc:vcc`).
-20. Use the reference workflows as starting points — `references/ci.yml` for validation, `references/release.yml` for tagged releases.
+- CI is the authoritative spec for supported platforms, toolchains, and flags. Local workflows must be compatible with CI.
+- Keep test builds simple: compile, then run, with minimal environment mutation.
+- Align the local toolchain with CI (e.g., MSVC + vcpkg `x64-windows-release` with `--cc:vcc`).
+- Use the reference workflows as starting points — `references/ci.yml` for validation, `references/release.yml` for tagged releases.
 
 ## Workflow
 

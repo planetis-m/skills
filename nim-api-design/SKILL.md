@@ -21,7 +21,6 @@ Reference examples live in `references/`.
 - Prefer procs, overloads, generics, and iterators. Do not default to methods or runtime dispatch for ordinary APIs.
 - Use named `object` types for public semantic data.
 - Use tuples only for local glue or iterator yields such as `(key, val)`.
-- Do not expose public status tuples such as `(ok: bool, value: T, msg: string)`.
 - Reuse stdlib names when the behavior matches: `len`, `contains`/`hasKey`, `[]`, `[]=`, `items`/`mitems`, `pairs`/`mpairs`, `incl`/`excl`, `push`/`pop`.
 
 ### Contracts
@@ -82,7 +81,6 @@ Reference examples live in `references/`.
 | Starting with `ref object` for plain data | It adds aliasing and shared mutation where the API does not need them |
 | Defaulting to methods or runtime dispatch | It hides behavior behind runtime polymorphism when a proc surface is simpler and clearer |
 | Weakening `Natural` or `Positive` to `int` and re-checking manually | It throws away a stronger type-level contract |
-| Returning `(ok: bool, value: T, msg: string)` | It mixes success data with ad hoc error signaling |
 | Returning a silent default for required data | It hides missing-data bugs |
 | Exporting scalar `var` accessors | It leaks mutable internal state |
 | Returning a `lent` or `var` result through a temp local | ORC rejects the borrow because the temp escapes |
@@ -94,7 +92,7 @@ Reference examples live in `references/`.
 - `references/collection_accessors.md` — One coherent container surface with stdlib-style names
 - `references/accessor_pair.md` — Minimal borrowed and mutable accessor pair with one shared error helper
 - `references/distinct_types.md` — Domain types with `distinct` and borrowed operations
-- `references/result_types.md` — Named result objects instead of status tuples
+- `references/parameter_and_result_shapes.md` — Parameter defaults, options objects, and named result objects
 
 ## Changelog
 

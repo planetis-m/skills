@@ -64,4 +64,3 @@ proc downloads(catalog: PackageCatalog; id: PackageId): Natural {.inline.} =
 - One shared helper for missing ids.
 - `tags` gets both `lent` and `var` because callers are allowed to mutate tags.
 - `downloads` stays a plain scalar accessor; there is no `var Natural` accessor.
-- No status tuple or secondary default-returning accessor.
