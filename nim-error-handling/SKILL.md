@@ -12,7 +12,9 @@ Use this skill when deciding where code should raise, catch, translate, retry, o
 ### Choose The Failure Channel
 
 - Use exceptions for invalid data, semantic failure, and operational failure.
-- Use `Option[T]`, `bool` plus `var`, or a parse-length return for expected absence or probe-style failure.
+- Use `bool` returns for expected absence and probe-style queries.
+- Use `Option[T]` when the absent value is a value type with no natural sentinel and the caller benefits from composable operations like `map` or `flatMap`.
+- Use a parse-length return (0 on failure) with a `var` out-param for scanning and parsing helpers.
 - Use structured result objects only at the orchestrator boundary, where exceptions become per-item output.
 - Do not pass `ok/kind/message` step objects through straight-line internal flows.
 
@@ -32,7 +34,7 @@ Use this skill when deciding where code should raise, catch, translate, retry, o
 
 ### Make Contracts Explicit
 
-- Write explicit `raises` contracts on exported procs when the exception surface is stable.
+- Write explicit `raises` contracts on exported procs when the exception surface is stable and narrow.
 - Do not annotate every internal helper by default.
 - Use `.raises: []` for a proc that must not raise.
 - Use `.raises: [X]` when one specific exception type is part of the contract.
@@ -54,40 +56,34 @@ Use this skill when deciding where code should raise, catch, translate, retry, o
 ## Workflow
 
 1. Decide whether failure is expected.
-   If it is an expected miss, use `Option`, `bool`, or another non-exception channel.
+   If it is an expected miss, use `bool`, `Option`, or a parse-length return. Do not throw.
 2. Mark the real boundaries.
    Step procs raise. Parse helpers may catch once. Module boundaries may translate. Orchestrators may record per-item failure.
 3. Pick the exception type.
    Start with an existing type. Add a subtype only if callers need it.
 4. Write the contract.
-   Add `raises` on exported procs when it improves the public contract. Keep it accurate.
+   Add `raises` on exported procs when the exception surface is narrow and stable. Keep it accurate.
 5. Verify the shape.
    Compile the code. Run the repo tests. If you wrote `raises`, make sure the compiler accepts the contract.
 
 ## Minimal Pattern
 
 ```nim
-import std/[parseutils]
+import std/[options]
 
-proc fakeAuditWrite(path, line: string) =
+proc findConfig*(paths: seq[string]): Option[string] =
+  for p in paths:
+    if fileExists(p):
+      return some(p)
+  none(string)
+
+proc loadConfig*(path: string): Config =
   if path.len == 0:
-    raise newException(OSError, "audit path is empty")
-
-proc parseRetryLimit*(s: string; value: var Positive): bool {.raises: [].} =
+    raise newException(ValueError, "config path is empty")
   try:
-    var parsed: int
-    if parseInt(s, parsed) > 0 and parsed > 0:
-      value = Positive(parsed)
-      result = true
-  except ValueError:
-    result = false
-
-proc writeAuditLine(path, line: string) =
-  try:
-    fakeAuditWrite(path, line)
-  except OSError:
-    raise newException(IOError, "audit write failed for " & path & ": " &
-      getCurrentExceptionMsg())
+    result = parseConfig(readFile(path))
+  except IOError:
+    raise newException(IOError, "cannot read config: " & getCurrentExceptionMsg())
 ```
 
 ## Common Mistakes
@@ -99,7 +95,7 @@ proc writeAuditLine(path, line: string) =
 | Passing `ok/kind/message` objects between internal steps | Reimplements exception propagation with more boilerplate |
 | Catching bare `Exception` | Also catches `Defect`, which is not recoverable application flow |
 | Adding a custom exception type with no distinct handling | Adds type noise without changing the contract |
-| Omitting `raises` on an exported proc with a stable exception surface | Leaves part of the public error contract implicit |
+| Omitting `raises` on an exported proc with a narrow, stable exception surface | Leaves part of the public error contract implicit |
 | Using `try/except` for cleanup | Cleanup belongs in `finally` |
 | Retrying without a separate classifier | Mixes retry policy with terminal failure handling |
 
@@ -110,5 +106,6 @@ proc writeAuditLine(path, line: string) =
 
 ## Changelog
 
+- 2026-04-14: Refined failure channel guidance: `bool` for expected absence, `Option[T]` for composable absent-value logic, parse-length for scanning. Clarified `raises` as opt-in for narrow stable surfaces. Replaced minimal pattern.
 - 2026-04-11: Refined the skill around Zen of Nim exception tracking and stdlib patterns. Added exported-proc `raises` guidance, expected-miss return channels, and custom exception base-class rules.
 - 2026-04-09: Simplified the rule set and set one project default for exception capture style.
