@@ -4,9 +4,11 @@ Minimal pattern for C callbacks in Nim.
 
 ```nim
 type
-  WriteCallback* = proc(buffer: ptr char, size: csize_t, nitems: csize_t, userdata: pointer): csize_t {.cdecl.}
+  WriteCallback* = proc(buffer: ptr char, size: csize_t, nitems: csize_t,
+    userdata: pointer): csize_t {.cdecl.}
 
-proc bodyWriteCb(buffer: ptr char, size: csize_t, nitems: csize_t, userdata: pointer): csize_t {.cdecl.} =
+proc bodyWriteCb(buffer: ptr char, size: csize_t, nitems: csize_t,
+    userdata: pointer): csize_t {.cdecl.} =
   let total = int(size * nitems)
   if total <= 0:
     result = 0

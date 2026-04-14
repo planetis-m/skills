@@ -31,7 +31,7 @@ proc `=dup`*(src: Handle): Handle {.error.}
 
 proc initHandle*(width, height: int): Handle =
   result.raw = libCreate(cint width, cint height)
-  if result.raw.isNil:
+  if result.raw == nil:
     raise newException(ValueError, "Failed to create handle")
 ```
 

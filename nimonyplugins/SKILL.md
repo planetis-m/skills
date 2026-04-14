@@ -17,7 +17,6 @@ Current Nimony may still delegate parts of compilation to Nim, but plugin code s
 2. If the resolved path ends with `/bin/nimony`, open `../src/nimony/lib/nimonyplugins.nim` from there.
 3. Otherwise open `src/nimony/lib/nimonyplugins.nim` under the executable's directory.
 4. Compile plugin-backed code with `nimony c`.
-5. If path resolution needs help, add `--path:` pointing to nimony's `src/` directory.
 
 ### End-To-End Shape
 

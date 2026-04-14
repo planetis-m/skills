@@ -12,7 +12,7 @@ const
   LIB_ModeA* = LibMode(0)
   LIB_ModeB* = LibMode(2)
   LIB_ModeC* = LibMode(3)
-
+  
 proc `==`*(a, b: LibMode): bool {.borrow.}
 ```
 

@@ -1,38 +1,55 @@
 # Module Layout
 
-Shared raw types plus selective ergonomic re-exports for a multi-module wrapper.
+Raw FFI bindings in a `bindings/` subfolder, with ergonomic wrapper at the top level.
+
+```
+libname/
+├── bindings/
+│   └── libname_raw.nim  # Raw FFI bindings
+└── libname.nim          # Ergonomic wrapper
+```
 
 ```nim
-# lib_raw_types.nim
+# bindings/libname_raw.nim
 type
-  SharedHandle* = object
-    id*: cint
+  LibHandle* = ptr object
 
-# lib_raw_audio.nim
-import ./lib_raw_types
+{.push importc, callconv: cdecl.}
 
-proc openAudio*(id: cint): SharedHandle =
-  SharedHandle(id: id)
+proc lib_open*(path: cstring): LibHandle
+proc lib_close*(handle: LibHandle)
+proc lib_do_work*(handle: LibHandle, data: cint): cint
 
-# lib_raw_video.nim
-import ./lib_raw_types
+{.pop.}
 
-proc openVideo*(id: cint): SharedHandle =
-  SharedHandle(id: id)
+# libname.nim
+import ./bindings/libname_raw
 
-# lib_api.nim
-import ./lib_raw_audio
-import ./lib_raw_video
-import ./lib_raw_types
+type
+  Lib* = object
+    handle: LibHandle
 
-export SharedHandle, openAudio, openVideo
+proc `=destroy`*(lib: var Lib) =
+  if lib.handle != nil:
+    lib_close(lib.handle)
 
-proc openDefaultAudio*(): SharedHandle =
-  openAudio(10)
+proc `=sink`*(dest: var Lib; src: Lib) =
+  `=destroy`(dest)
+  dest.handle = src.handle
+
+proc `=wasMoved`*(lib: var Lib) =
+  lib.handle = nil
+
+proc open*(path: string): Lib =
+  result.handle = lib_open(path)
+
+proc doWork*(lib: var Lib; data: int): int =
+  lib_do_work(lib.handle, data.cint)
 ```
 
 ## When to use
 
-- Use this layout when several raw modules share handle or enum types.
-- Keep the shared-type module boring and dependency-light so it does not pull wrapper code back into the raw layer.
-- Re-export only the stable ergonomic surface from the top-level API module.
+- Use this layout for every C library wrapper.
+- Keep the `_raw.nim` file focused on FFI types and `importc` procs only.
+- Put ownership hooks, safe types, and ergonomic helpers in the wrapper.
+- The wrapper imports from `bindings/libname_raw` and never the reverse.

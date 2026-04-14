@@ -48,12 +48,11 @@ proc `=dup`*(src: Asset): Asset =
 
 proc loadAsset*(path: string): Asset =
   let raw = libLoad(path.cstring)
-  if raw.isNil:
+  if raw == nil:
     raise newException(IOError, "Failed to load asset: " & path)
   result = Asset(
     raw: raw,
-    rc: cast[ptr int](alloc0(sizeof(int)))
-  )
+    rc: cast[ptr int](alloc0(sizeof(int))))
 ```
 
 ## Key points
