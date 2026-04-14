@@ -21,11 +21,11 @@ proc bodyWriteCb(buffer: ptr char, size: csize_t, nitems: csize_t, userdata: poi
       result = csize_t(total)
 ```
 
-## Rules
+## Key points
 
-* Use `{.cdecl.}` for all C callbacks
-* `userdata` is a raw pointer — you define its type
-* Cast back using the exact original type (`ptr T`)
-* The pointed memory must remain valid for the entire callback lifetime
-* Do not pass temporaries or moved values
-* Do not use closures
+* Callbacks must be `{.cdecl.}` — C expects a plain function pointer, not a Nim closure.
+* `userdata` is a raw pointer passed through C and must be cast back to the original type.
+* The object behind `userdata` must remain alive for the entire callback lifetime.
+* Do not pass stack temporaries as userdata.
+* Do not pass freed or invalid pointers as userdata.
+* `setLen` is allowed even if it reallocates the internal buffer; only the buffer moves, not the string header.
