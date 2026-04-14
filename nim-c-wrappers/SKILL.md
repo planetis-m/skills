@@ -22,7 +22,7 @@ This skill covers the two-layer pattern for wrapping C libraries in Nim: a raw F
 6. Use `{.header.}` for static linking, `{.dynlib.}` for dynamic linking. Guard library names with `when defined(windows):` etc.
 7. **Never reorder struct fields.** Use `object` in C field order. Add `packed` only if C headers specify packing.
 8. Use `incompleteStruct` and list only needed fields to reduce ABI risk.
-9. For C enums, use **typed integer aliases** (`cint`/`cuint` or `distinct int`) + `const` values. Do not use Nim `enum` in raw bindings.
+9. For C enums, use `distinct` integer types + `const` values. Do not use Nim `enum` in raw bindings. Find actual enum values in C headers—do not guess.
 10. For bitflags, use `distinct` integer types with bitwise helpers. Do not use `set[Enum]`.
 11. Map C macros: numeric → `const`; function-like → `inline proc` or `template`; sizeof/side-effect → `template`.
 12. Keep pointer types as C intends — do not convert them in the raw layer.
@@ -98,6 +98,7 @@ Struct types: `object` in C order. Fixed arrays: `array[N, T]`. Pointer+length: 
 | Using `seq` where C expects stable pointer | `add()` can reallocate, invalidating the pointer |
 | Reordering struct fields | Breaks ABI layout, causes garbage values |
 | Using Nim `enum` for C enum values | ABI incompatibility; use typed integer aliases |
+| Adding enum or constant values without inspecting headers | Find actual enum values in C headers, do not guess |
 | Passing closures as C callbacks | C expects plain function pointers, not GC closures |
 | Storing `cstring` beyond the call | `cstring` from `string.cstring` dangles after the source is freed |
 | `=dup` body using `result = src` in RC pattern | May trigger implicit `=copy` instead of `=dup`; use field-by-field assignment |
@@ -107,7 +108,7 @@ Struct types: `object` in C order. Fixed arrays: `array[N, T]`. Pointer+length: 
 
 - `references/move_only_resource.md` — Complete move-only resource wrapper with destructor hooks
 - `references/rc_resource.md` — Reference-counted (shared ownership) resource wrapper
-- `references/callback_registration.md` — C callback registration with rooted userdata state
+- `references/callback_pattern.md` — C callback pattern using direct pointer casting
 - `references/enum_and_bitflags.md` — Typed aliases for enums and distinct types for bitflags
 - `references/module_layout.md` — Shared-types module plus selective ergonomic re-exports
 
