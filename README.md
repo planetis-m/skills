@@ -97,4 +97,4 @@ Then restart Codex.
 
 ## License
 
-This repository is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0) license.
+Licensed under **CC BY-NC-SA 4.0**. See [LICENSE](LICENSE).

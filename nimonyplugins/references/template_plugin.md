@@ -1,12 +1,7 @@
 # Template Plugin: Compile-Time Lookup Table
 
-Generates a 256-element popcount (Hamming weight) lookup table at compile time.
-The plugin emits a bracket literal `[0, 1, 1, 2, 1, 2, 2, 3, ...]` that the compiler
-sees as a plain array constant. Zero runtime cost.
-
-## Caller (`app.nim`)
-
 ```nim
+# app.nim
 import std/syncio
 
 template buildPopcountLut(): untyped {.plugin: "poplut".}
@@ -25,9 +20,8 @@ echo popcnt(255)  # 8
 echo popcnt(-1)   # 64
 ```
 
-## Plugin (`poplut.nim`)
-
 ```nim
+# poplut.nim
 import nimonyplugins
 
 proc popc8(i: int): int =
@@ -48,9 +42,9 @@ var inp = loadPluginInput()
 saveTree tr(inp)
 ```
 
-What this teaches:
-- Template plugins replace a bodiless `template ... {.plugin: "name".}` at each call site
-- The plugin runs real computation and emits NIF that the compiler splices in
-- `withTree BracketX` builds an array literal; `addIntLit` emits each element
-- The caller types the result (`array[256, int]`) to constrain what the plugin must produce
-- Same pattern works for CRC tables, Base64 alphabets, sine approximations — any compile-time table
+Key points
+- Template plugins replace a bodiless `template ... {.plugin: "name".}` at each call site.
+- The plugin runs real computation and emits NIF that the compiler splices in.
+- `withTree BracketX` builds an array literal; `addIntLit` emits each element.
+- The caller types the result (`array[256, int]`) to constrain what the plugin must produce.
+- Same pattern works for CRC tables, Base64 alphabets, sine approximations — any compile-time table.

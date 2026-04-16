@@ -1,22 +1,15 @@
 # Type Plugin: Field-Aware Passthrough
 
-A type plugin fires for every module that uses the annotated type. It receives two inputs:
-the module AST (`paramStr(1)`) and the type definition (`paramStr(3)`). This example
-passes the module through unchanged while reading the type definition — the foundation
-for observer injection, auto-serialization, and field-change notifications.
-
-## Type definition (`traceable.nim`)
-
 ```nim
+# traceable.nim
 type
   Traceable* {.plugin: "traceplugin".} = object
     id*: int
     name*: string
 ```
 
-## Plugin (`traceplugin.nim`)
-
 ```nim
+# traceplugin.nim
 import nimonyplugins
 import std/os
 
@@ -35,9 +28,8 @@ discard renderNode(typeAst)                # inspect fields here
 saveTree transform(moduleAst)
 ```
 
-## Caller (`app.nim`)
-
 ```nim
+# app.nim
 import std/syncio
 import traceable
 
@@ -47,10 +39,10 @@ echo item.id
 echo item.name
 ```
 
-What this teaches:
-- Declared on the type: `type T {.plugin: "name".} = object ...`
-- Fires for every module that imports and uses `Traceable`, not just the defining module
-- `loadPluginInput()` reads the module AST; `loadPluginInput(paramStr(3))` reads the type definition
-- The type definition contains field names and types — parse it to know what to intercept
-- Must return the complete module; use `takeTree` for unchanged statements, `skip` + construction for rewrites
-- Real extensions: inject `echo` on field writes, generate `==`/`$` from fields, add serialization hooks
+Key points
+- Declared on the type: `type T {.plugin: "name".} = object ...`.
+- Fires for every module that imports and uses the type, not just the defining module.
+- `loadPluginInput()` reads the module AST; `loadPluginInput(paramStr(3))` reads the type definition.
+- The type definition AST contains field names and types — parse it to know what to intercept.
+- Must return the complete module; use `takeTree` for unchanged statements, `skip` + construction for rewrites.
+- Real extensions: inject `echo` on field writes, generate `==`/`$` from fields, add serialization hooks.
