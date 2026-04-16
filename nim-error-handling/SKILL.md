@@ -30,7 +30,9 @@ Use this skill to decide where code should raise, catch, translate, retry, or re
 - Catch `CatchableError` as the recoverable catch-all. Do not catch bare `Exception`.
 - Use specific existing exception types such as `ValueError`, `IOError`, and `OSError` when callers should distinguish them.
 - Add a custom exception type only when callers need a narrower semantic type for distinct handling.
-- Custom exception types must derive from the closest existing base such as `ValueError` or `IOError`.
+- Custom exception types must derive from `CatchableError` (recoverable) or `Defect` (programming bugs).
+- Inherit from a more specific existing base like `ValueError` or `IOError` when the semantic fit is clear.
+- Deriving directly from `CatchableError` or `Defect` is fine when no intermediate base matches.
 
 ### Make Contracts Explicit
 

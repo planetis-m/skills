@@ -13,58 +13,75 @@ Current Nimony may still delegate parts of compilation to Nim, but plugin code s
 
 ### Setup
 
-1. Resolve the nimony executable: `readlink -f "$(command -v nimony)"`.
-2. If the resolved path ends with `/bin/nimony`, open `../src/nimony/lib/nimonyplugins.nim` from there.
-3. Otherwise open `src/nimony/lib/nimonyplugins.nim` under the executable's directory.
-4. Compile plugin-backed code with `nimony c`.
+- Resolve the nimony executable: `readlink -f "$(command -v nimony)"`.
+- If the resolved path ends with `/bin/nimony`, open `../src/nimony/lib/nimonyplugins.nim` from there.
+- Otherwise open `src/nimony/lib/nimonyplugins.nim` under the executable's directory.
+- Plugin modules are compiled with Nim 2, not Nimony. The compiler invokes `nim c -d:nimonyPlugin plugin.nim` and caches the result.
+- The plugin path in `{.plugin: "path"}` is relative to the directory of the source file that contains the pragma, not the call site.
+
+### Plugin Kinds
+
+There are three kinds of plugins. All share the same `nimonyplugins` API.
+
+- **Template plugin**: `template foo(...) {.plugin: "path".}` — invoked at each call site. The input is wrapped in a `StmtsS` node containing the arguments. Skip it with `if n.stmtKind == StmtsS: inc n`.
+- **Module plugin**: `{.plugin: "path".}` as a top-level statement — receives the entire module after semantic analysis. Must output the complete transformed module.
+- **Type plugin**: `type T {.plugin: "path".} = ...` — invoked for every module that uses `T`. Receives two inputs: `paramStr(1)` for the module AST and `paramStr(3)` for the type definition.
 
 ### End-To-End Shape
 
-6. Expose the rewrite through a public template such as `template foo*(spec: string): untyped {.plugin: "fooplugin".}`.
-7. Keep the plugin logic in a separate plugin module.
-8. Start the plugin with `let root = loadPluginInput()`.
-9. Read the relevant input node, build a `Tree`, then finish with `saveTree(resultTree)` or `saveTree(errorTree("invalid plugin input"))`.
-10. Keep runtime helpers in the public module. Keep NIF traversal and code generation in the plugin module.
+- Expose the rewrite through a public template such as `template foo*(spec: string): untyped {.plugin: "fooplugin".}`.
+- Keep the plugin logic in a separate plugin module.
+- Start the plugin with `let root = loadPluginInput()`. For type plugins, also load `loadPluginInput(paramStr(3))` for the triggering type definitions.
+- Read the relevant input node, build a `Tree`, then finish with `saveTree(resultTree)` or `saveTree(errorTree("invalid plugin input"))`.
+- Keep runtime helpers in the public module. Keep NIF traversal and code generation in the plugin module.
+- Template plugins can be hidden inside imported modules so callers do not see the `.plugin` pragma.
 
 ### Mental Model
 
-11. `Tree` is the mutable copy-on-write builder. Copying a Tree shares the payload; the next mutation detaches it.
-12. `Node` is an owned read handle into a frozen snapshot. Copying a Node creates another read handle to the same snapshot.
-13. `snapshot(tree)` requires a non-empty tree. Guard with `isEmpty(tree)` first.
-14. Treat `Tree` as owned mutable output. Treat `Node` as a stable read cursor.
+- `Tree` is the mutable copy-on-write builder. Copying a Tree shares the payload; the next mutation detaches it.
+- `Node` is an owned read handle into a frozen snapshot. Copying a Node creates another read handle to the same snapshot.
+- `snapshot(tree)` requires a non-empty tree. Guard with `isEmpty(tree)` first.
+- Treat `Tree` as owned mutable output. Treat `Node` as a stable read cursor.
 
 ### Construction
 
-15. `createTree()` creates empty output.
-16. `createTree(nkCall, callee, arg1, arg2)` and `createTree(nkCall, info, callee, arg1, arg2)` build a validated node in one call.
-17. `withTree(kind, info): body` is the normal way to emit a balanced node.
-18. Use manual `addParLe`/`addParRi` only when conditional structure makes `withTree` awkward.
-19. Constructed trees are validated. Emit balanced trees with the expected child shape for each tag.
-20. Use `NoLineInfo` only for genuinely synthetic output. Preserve source `info` when output is derived from input nodes.
+- `createTree()` creates empty output.
+- `createTree(nkCall, callee, arg1, arg2)` and `createTree(nkCall, info, callee, arg1, arg2)` build a validated node in one call.
+- `withTree(kind, info): body` is the normal way to emit a balanced node.
+- Use manual `addParLe`/`addParRi` only when conditional structure makes `withTree` awkward.
+- `createTree(kind, children...)`, `%~`, and `nifFragment` produce validated trees. If the structure is wrong, the result is replaced with an `ErrT` node. Trees built via `withTree` or `addParLe`/`addParRi` are not validated.
+- Use `NoLineInfo` only for genuinely synthetic output. Preserve source `info` when output is derived from input nodes.
 
 ### Traversal
 
-21. `inc(node)` advances one token.
-22. `skip(node)` skips the whole current subtree.
-23. Do not use `inc` when you mean `skip`.
-24. Copy a `Node` for lookahead without committing movement on the original.
-25. Use `kind`, `stmtKind`, `exprKind`, `typeKind`, `otherKind`, and `pragmaKind` to inspect the current node.
-26. Use `symId`, `symText`, `identText`, `stringValue`, `charLit`, `intValue`, `uintValue`, and `floatValue` to read payload.
+- `inc(node)` advances one token.
+- `skip(node)` skips the whole current subtree.
+- Do not use `inc` when you mean `skip`.
+- Copy a `Node` for lookahead without committing movement on the original.
+- Use `kind`, `stmtKind`, `exprKind`, `typeKind`, `otherKind`, and `pragmaKind` to inspect the current node.
+- Use `symId`, `symText`, `identText`, `stringValue`, `charLit`, `intValue`, `uintValue`, and `floatValue` to read payload.
 
 ### Subtree Reuse
 
-27. `takeTree(t, var node)` copies the current subtree and advances the reader.
-28. `addSubtree(t, node)` copies the current subtree without advancing the reader.
-29. `add(t, childTree)` appends a whole generated tree.
-30. Reuse existing subtrees when they are already correct. Do not rebuild them token by token without a reason.
+- `takeTree(t, var node)` copies the current subtree and advances the reader.
+- `addSubtree(t, node)` copies the current subtree without advancing the reader.
+- `add(t, childTree)` appends a whole generated tree.
+- Reuse existing subtrees when they are already correct. Do not rebuild them token by token without a reason.
+
+### NIF Templates
+
+- `%~` parses a NIF template string with `$name` substitutions from a bindings table.
+- `nifFragment(str)` parses a literal NIF fragment string into a Tree. Use it when there are no substitutions.
+- `$$` produces a literal dollar sign inside a NIF template.
+- The `~` operator converts values to Tree fragments: `~node` copies the subtree, `~"str"` makes a string literal, `~ident("name")` makes an identifier, `~42` makes an integer literal, `~-14` makes a float literal, `~'x'` makes a char literal, `~true`/`~false` makes a boolean node, `~tree` passes a Tree through unchanged.
 
 ### Errors And IO
 
-31. Use `errorTree(msg)` for synthetic plugin errors.
-32. Use `errorTree(msg, at)` or `errorTree(msg, at, orig)` when location matters.
-33. `renderTree(tree)` and `renderNode(node)` are for debugging.
-34. `loadPluginInput()` reads the default plugin input from `paramStr(1)`.
-35. `saveTree(tree)` writes the default plugin output to `paramStr(2)`.
+- Use `errorTree(msg)` for synthetic plugin errors.
+- Use `errorTree(msg, at)` or `errorTree(msg, at, orig)` when location matters.
+- `renderTree(tree)` and `renderNode(node)` are for debugging.
+- `loadPluginInput()` reads the default plugin input from `paramStr(1)`.
+- `saveTree(tree)` writes the default plugin output to `paramStr(2)`.
 
 ## Workflow
 
@@ -93,14 +110,17 @@ Current Nimony may still delegate parts of compilation to Nim, but plugin code s
 | Snapshotting an empty tree | `snapshot(tree)` asserts on empty input |
 | Rebuilding correct input subtrees atom by atom | It is slower, noisier, and easier to get wrong than subtree reuse |
 | Crashing on invalid plugin input | Emit `errorTree("invalid plugin input")` so the compiler reports a source-level plugin error |
+| Assuming `withTree` output is validated | Only `createTree(kind, children)`, `%~`, and `nifFragment` validate; `withTree` and `addParLe`/`addParRi` do not |
 
 ## References
 
-- `references/minimal_plugin_roundtrip.md` — Small plugin-backed template that works end to end
-- `references/smartcli_pattern.md` — Real plugin layout from `smartcli`
+- `references/template_plugin.md` — Template plugin: compile-time 256-element popcount lookup table
+- `references/module_plugin.md` — Module plugin: strip top-level debug blocks
+- `references/type_plugin.md` — Type plugin: field-aware passthrough with paramStr(3)
 
 ## Changelog
 
+- 2026-04-15: Added plugin kinds (template/module/type), Nim 2 compilation, path resolution, StmtsS wrapper protocol, type plugin dual input, validation scope, NIF template $$ escape, and hidden plugin pattern from updated plugin docs.
 - 2026-04-11: Refined the skill around real end-to-end plugin structure. Added plugin-backed template guidance, default `loadPluginInput`/`saveTree` flow, real sample references, and explicit "do not write macros" guidance.
 - 2026-04-09: Initial verified skill created from the original `nimonyplugins` guidance.
 - 2026-04-09: Refined test-backed guidance for Node lifetime, NIF templates, validation edges, and plugin IO overloads.

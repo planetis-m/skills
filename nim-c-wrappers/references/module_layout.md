@@ -1,29 +1,20 @@
 # Module Layout
 
-Raw FFI bindings in a `bindings/` subfolder, with ergonomic wrapper at the top level.
-
 ```
 libname/
 ├── bindings/
-│   └── libname_raw.nim  # Raw FFI bindings
+│   └── libname_raw.nim  # Raw FFI — importc procs, C types, constants only
 └── libname.nim          # Ergonomic wrapper
 ```
 
+## Pattern A: Facade (default)
+
+`import` + `export` — downstream sees both raw and ergonomic symbols.
+
 ```nim
-# bindings/libname_raw.nim
-type
-  LibHandle* = ptr object
-
-{.push importc, callconv: cdecl.}
-
-proc lib_open*(path: cstring): LibHandle
-proc lib_close*(handle: LibHandle)
-proc lib_do_work*(handle: LibHandle, data: cint): cint
-
-{.pop.}
-
 # libname.nim
 import ./bindings/libname_raw
+export libname_raw
 
 type
   Lib* = object
@@ -42,14 +33,38 @@ proc `=wasMoved`*(lib: var Lib) =
 
 proc open*(path: string): Lib =
   result.handle = lib_open(path)
-
-proc doWork*(lib: var Lib; data: int): int =
-  lib_do_work(lib.handle, data.cint)
 ```
 
-## When to use
+## Pattern B: Opaque
 
-- Use this layout for every C library wrapper.
-- Keep the `_raw.nim` file focused on FFI types and `importc` procs only.
-- Put ownership hooks, safe types, and ergonomic helpers in the wrapper.
-- The wrapper imports from `bindings/libname_raw` and never the reverse.
+`from ... import nil` — raw symbols stay qualified behind `libname_raw.`, downstream only sees ergonomic API.
+
+```nim
+# libname.nim
+from ./bindings/libname_raw import nil
+
+type
+  Lib* = object
+    handle: libname_raw.LibHandle
+
+proc `=destroy`*(lib: var Lib) =
+  if lib.handle != nil:
+    libname_raw.lib_close(lib.handle)
+
+proc `=sink`*(dest: var Lib; src: Lib) =
+  `=destroy`(dest)
+  dest.handle = src.handle
+
+proc `=wasMoved`*(lib: var Lib) =
+  lib.handle = nil
+
+proc open*(path: string): Lib =
+  result.handle = libname_raw.lib_open(path)
+```
+
+## Rules
+
+- Raw module: `importc` procs, C types, constants only. No Nim logic.
+- Wrapper imports from raw — never the reverse.
+- Default to Pattern A. Use Pattern B when raw symbols clash with ergonomic names or pollute the namespace.
+- Thin wrappers where the C API is already the public API: skip the split, use a single flat module.
