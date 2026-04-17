@@ -1,4 +1,0 @@
-interface:
-  display_name: "Nim C Bindings"
-  short_description: "Build portable Nim-to-C bindings and matching CI workflows"
-  default_prompt: "Use $nim-c-bindings to implement or review Nim-to-C bindings, platform link setup, and cross-platform CI for Linux, macOS, and Windows."

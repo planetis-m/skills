@@ -141,8 +141,7 @@ Test these scenarios for every custom-hook type:
 
 - `references/move_only_owner.md` — exclusive resource ownership, no copy allowed
 - `references/deep_owning_container.md` — manual allocation with deep copy
-- `references/shared_refcounted.md` — refcounted handle (repo default first, compatibility note second)
-- `references/cow_string.md` — copy-on-write string with inverted counter
+- `references/shared_refcounted.md` — refcounted handle (separate counter + generic SharedPtr)
 - `references/custom_sink.md` — when and how to write a custom `=sink`
 
 ## 6. Changelog
@@ -152,4 +151,4 @@ Test these scenarios for every custom-hook type:
 - 2026-04-07: Added refcounted nuances from cowstrings analysis
 - 2026-04-08: Restructured — examples moved to references/, workflow-focused SKILL.md
 - 2026-04-08: Standardized shared-ownership guidance on the inverted counter convention
-- 2026-04-15: Added canonical hook-by-hook rules, ownership model fidelity, nested destroy ordering
+- 2026-04-17: Removed cow_string.md (redundant with shared_refcounted.md);

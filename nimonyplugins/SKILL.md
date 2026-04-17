@@ -38,10 +38,11 @@ There are three kinds of plugins. All share the same `nimonyplugins` API.
 
 ### Mental Model
 
-- `Tree` is the mutable copy-on-write builder. Copying a Tree shares the payload; the next mutation detaches it.
-- `Node` is an owned read handle into a frozen snapshot. Copying a Node creates another read handle to the same snapshot.
-- `snapshot(tree)` requires a non-empty tree. Guard with `isEmpty(tree)` first.
-- Treat `Tree` as owned mutable output. Treat `Node` as a stable read cursor.
+- `Tree` is the mutable COW builder. Copying a Tree shares the payload; the next mutation detaches it.
+- `Node` wraps a `Cursor`, which is a reference-counted shared pointer into token data. Copying a Node increments the refcount. Nodes keep data alive even after the source Tree is destroyed.
+- `snapshot` takes `var Tree` (borrows, does not consume). It calls `beginRead` under the hood, which shares buffer ownership. The tree stays writable; mutation detaches the buffer via COW.
+- `snapshot` requires a non-empty tree. Guard with `isEmpty(tree)` first.
+- Treat `Tree` as owned mutable output. Treat `Node` as a stable read handle that independently owns its data.
 
 ### Construction
 
@@ -107,6 +108,7 @@ There are three kinds of plugins. All share the same `nimonyplugins` API.
 | Treating `Tree` as a read cursor | `Tree` is output storage; `Node` is the read handle |
 | Using `inc` instead of `skip` on a subtree | `inc` leaves you inside the subtree |
 | Confusing `takeTree` with `addSubtree` | One advances the reader and the other does not |
+| Assuming a Node is invalidated when its source Tree is mutated or destroyed | The Cursor refcount keeps the data alive; Tree mutation detaches the buffer via COW |
 | Snapshotting an empty tree | `snapshot(tree)` asserts on empty input |
 | Rebuilding correct input subtrees atom by atom | It is slower, noisier, and easier to get wrong than subtree reuse |
 | Crashing on invalid plugin input | Emit `errorTree("invalid plugin input")` so the compiler reports a source-level plugin error |
@@ -120,7 +122,7 @@ There are three kinds of plugins. All share the same `nimonyplugins` API.
 
 ## Changelog
 
-- 2026-04-15: Added plugin kinds (template/module/type), Nim 2 compilation, path resolution, StmtsS wrapper protocol, type plugin dual input, validation scope, NIF template $$ escape, and hidden plugin pattern from updated plugin docs.
-- 2026-04-11: Refined the skill around real end-to-end plugin structure. Added plugin-backed template guidance, default `loadPluginInput`/`saveTree` flow, real sample references, and explicit "do not write macros" guidance.
-- 2026-04-09: Initial verified skill created from the original `nimonyplugins` guidance.
-- 2026-04-09: Refined test-backed guidance for Node lifetime, NIF templates, validation edges, and plugin IO overloads.
+- 2026-04-17: Updated for Cursor-as-shared-pointer. Node wraps Cursor directly; snapshot takes var Tree; nodes outlive source trees.
+- 2026-04-15: Added plugin kinds, Nim 2 compilation, path resolution, StmtsS protocol, type plugin dual input, validation scope, NIF template $$ escape.
+- 2026-04-11: End-to-end plugin structure, plugin-backed templates, loadPluginInput/saveTree flow, sample references.
+- 2026-04-09: Initial skill. Node lifetime, NIF templates, validation edges, plugin IO overloads.

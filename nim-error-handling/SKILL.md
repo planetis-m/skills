@@ -1,11 +1,11 @@
 ---
 name: nim-error-handling
-description: Design clear Nim error-handling flows; when to raise exceptions vs return `Option`/`bool`, how to define `raises` contracts, and where to translate, retry, or record failures. Use when reviewing failure behavior, parse errors, exception boundaries, or batch processing that needs per-item error reporting.
+description: Design clear Nim error-handling flows; when to raise exceptions vs return `Option`/`bool`, how to define `raises` contracts, and where to translate or record failures. Use when reviewing failure behavior, parse errors, exception boundaries, or batch processing that needs per-item error reporting.
 ---
 
 # Nim Error Handling
 
-Use this skill to decide where code should raise, catch, translate, retry, or return structured failure data.
+Use this skill to decide where code should raise, catch, translate, or return structured failure data.
 
 ## Rules
 
@@ -49,11 +49,9 @@ Use this skill to decide where code should raise, catch, translate, retry, or re
 - If the handler only needs the message text, use `getCurrentExceptionMsg()`.
 - If the handler needs the exception object or fields, use `except X as e` or `getCurrentException()`.
 
-### Cleanup and Retry
+### Cleanup
 
 - Use `try/finally` for cleanup.
-- Separate retry decision (should retry) from terminal failure classification (what to raise/record).
-- After retries are exhausted, raise once or record one final failure outcome.
 
 ## Workflow
 
@@ -98,15 +96,14 @@ proc loadConfig*(path: string): Config =
 | Catching bare `Exception` | Also catches `Defect`, which is not recoverable application flow |
 | Adding a custom exception type with no distinct handling | Adds type noise without changing the contract |
 | Using `try/except` for cleanup | Cleanup belongs in `finally` |
-| Retrying without a separate classifier | Mixes retry policy with terminal failure handling |
 
 ## References
 
 - `references/batch_preview_boundary.md` — Batch boundary that records per-item failures
-- `references/retry_classification.md` — Retry predicate and final-failure classification
 
 ## Changelog
 
-- 2026-04-14: Refined failure channel guidance with clearer `bool` vs `Option` vs parse-length distinction.
-- 2026-04-11: Refined the skill around Zen of Nim exception tracking and stdlib patterns. Added exported-proc `raises` guidance, expected-miss return channels, and custom exception base-class rules.
-- 2026-04-09: Simplified the rule set and set one project default for exception capture style.
+- 2026-04-17: Removed retry advice (resilience, not error handling). Cleaned up frontmatter.
+- 2026-04-14: Refined failure channel guidance. Clearer `bool` vs `Option` vs parse-length.
+- 2026-04-11: Added `raises` contracts, exception base-class rules, expected-miss return channels.
+- 2026-04-09: Initial skill.
