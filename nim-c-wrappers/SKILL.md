@@ -11,21 +11,21 @@ This skill covers the two-layer pattern for wrapping C libraries in Nim: a raw F
 
 ### Architecture
 
-1. Use a **two-layer design**: raw FFI layer (ABI-faithful) + ergonomic Nim layer (safe, idiomatic). Keep the raw layer thin and stable.
-2. Split modules by library domain. Mirror the C header structure for large libraries.
-3. Centralize shared types in a `lib_raw_types` module to avoid cyclic imports.
-4. Export raw symbols only for advanced users; re-export selected symbols from ergonomic modules.
+- Use a **two-layer design**: raw FFI layer (ABI-faithful) + ergonomic Nim layer (safe, idiomatic). Keep the raw layer thin and stable.
+- Split modules by library domain. Mirror the C header structure for large libraries.
+- Centralize shared types in a `lib_raw_types` module to avoid cyclic imports.
+- Export raw symbols only for advanced users; re-export selected symbols from ergonomic modules.
 
 ### Raw FFI Layer
 
-5. Use `importc` with `cdecl` (or `stdcall` if the library requires it). Prefer `{.push callconv: cdecl, header: "foo.h".}` blocks for shared conventions.
-6. Use `{.header.}` for static linking, `{.dynlib.}` for dynamic linking. Guard library names with `when defined(windows):` etc.
-7. **Never reorder struct fields.** Use `object` in C field order. Add `packed` only if C headers specify packing.
-8. Use `incompleteStruct` and list only needed fields to reduce ABI risk.
-9. For C enums, use `distinct` integer types + `const` values. Do not use Nim `enum` in raw bindings. Find actual enum values in C headers—do not guess.
-10. For bitflags, use `distinct` integer types with bitwise helpers. Do not use `set[Enum]`.
-11. Map C macros: numeric → `const`; function-like → `inline proc` or `template`; sizeof/side-effect → `template`.
-12. Keep pointer types as C intends — do not convert them in the raw layer.
+- Use `importc` with `cdecl` (or `stdcall` if the library requires it). Prefer `{.push callconv: cdecl, header: "foo.h".}` blocks for shared conventions.
+- Use `{.header.}` for static linking, `{.dynlib.}` for dynamic linking. Guard library names with `when defined(windows):` etc.
+- **Never reorder struct fields.** Use `object` in C field order. Add `packed` only if C headers specify packing.
+- Use `incompleteStruct` and list only needed fields to reduce ABI risk.
+- For C enums, use `distinct` integer types + `const` values. Do not use Nim `enum` in raw bindings. Find actual enum values in C headers—do not guess.
+- For bitflags, use `distinct` integer types with bitwise helpers. Do not use `set[Enum]`.
+- Map C macros: numeric → `const`; function-like → `inline proc` or `template`; sizeof/side-effect → `template`.
+- Keep pointer types as C intends — do not convert them in the raw layer.
 
 ### Type Mapping
 
@@ -58,28 +58,29 @@ Struct types: `object` in C order. Fixed arrays: `array[N, T]`. Pointer+length: 
 
 ### Ergonomic Layer
 
-13. For **move-only** resources: implement `=destroy`, `=wasMoved`, `=sink`; mark `=copy` and `=dup` with `{.error.}`. Use `ensureMove()` for ownership transfer.
-14. For **reference-counted** resources: use a `ptr int` counter. `=copy`/`=dup` increment, `=destroy` decrements and frees at zero. Use field-by-field assignment in `=dup`, not `result = src`.
-15. In `=destroy`, explicitly call `=destroy` on owned nested GC-managed fields (string, seq) after releasing C resources.
-16. Raise exceptions (IOError, ValueError, etc.) for C errors — do not return result wrappers that only carry ok/kind/message.
-17. Do not create custom exception types unless callers handle them differently.
-18. Catch errors only at translation boundaries (C return code → Nim exception, or exception → domain result). Let exceptions propagate otherwise.
+- For **move-only** resources: implement `=destroy`, `=wasMoved`, `=sink`; mark `=copy` and `=dup` with `{.error.}`. Use `ensureMove()` for ownership transfer.
+- For **reference-counted** resources: use a `ptr int` counter. `=copy`/`=dup` increment, `=destroy` decrements and frees at zero. Use field-by-field assignment in `=dup`, not `result = src`.
+- In `=destroy`, explicitly call `=destroy` on owned nested GC-managed fields (string, seq) after releasing C resources.
+- Define ownership hooks in the **same module** as the type. Cross-module hook definitions are a compile error.
+- Raise exceptions (IOError, ValueError, etc.) for C errors — do not return result wrappers that only carry ok/kind/message.
+- Do not create custom exception types unless callers handle them differently.
+- Catch errors only at translation boundaries (C return code → Nim exception, or exception → domain result). Let exceptions propagate otherwise.
 
 ### Naming
 
-19. Strip redundant C prefixes (LIB_, foo_); keep names that disambiguate or match docs.
-20. Keep raw constant names in C style (e.g., `CURLE_OK`).
-21. Rename Nim keywords: `type` → `typ`, `addr` → `address`, or use `importc:` to preserve the C name.
+- Strip redundant C prefixes (LIB_, foo_); keep names that disambiguate or match docs.
+- Keep raw constant names in C style (e.g., `CURLE_OK`).
+- Rename Nim keywords: `type` → `typ`, `addr` → `address`, or use `importc:` to preserve the C name.
 
 ### Callbacks
 
-22. Declare callbacks as plain C-callable procs such as `proc onEvent(code: cint; userData: pointer) {.cdecl.}`. Do not pass Nim closures to C.
-23. For callback state, use a global table keyed by `userdata`. Ensure Nim data is globally rooted or manually managed.
+- Declare callbacks as plain C-callable procs such as `proc onEvent(code: cint; userData: pointer) {.cdecl.}`. Do not pass Nim closures to C.
+- For callback state, use a global table keyed by `userdata`. Ensure Nim data is globally rooted or manually managed.
 
 ### Verification
 
-24. Add `static: doAssert sizeof(T) == N` and `offsetOf` checks in tests to verify struct layouts.
-25. Test ABI with compile + link + smoke test + runtime checks.
+- Add `static: doAssert sizeof(T) == N` and `offsetOf` checks in tests to verify struct layouts.
+- Test ABI with compile + link + smoke test + runtime checks.
 
 ## Workflow
 

@@ -39,7 +39,7 @@ proc `*`*(a, b: LibFlags): LibFlags {.inline.} =
   LibFlags(cuint(a) and cuint(b))
 
 proc `<=`*(a, b: LibFlags): bool {.inline.} =
-  (cuint(x) and not cuint(y)) == 0
+  (cuint(a) and not cuint(b)) == 0
 
 proc contains*(flags: LibFlags; flag: LibFlags): bool {.inline.} =
   (cuint(flags) and cuint(flag)) != 0

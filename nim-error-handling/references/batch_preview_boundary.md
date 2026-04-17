@@ -54,7 +54,7 @@ proc buildPreviewPayload(pages: seq[string]; pageIndex: int): seq[byte] =
   let page = pages[pageIndex]
   if page.len == 0:
     raise newException(IOError, "selected page was empty")
-  result = cast[seq[byte]](page.toOpenArrayByte(0, page.high))
+  result = @(page.toOpenArrayByte(0, page.high))
 
 proc publishPreview(payload: seq[byte]): string =
   fakeUpload(payload)
@@ -96,7 +96,7 @@ proc runBatch(paths: seq[string]; pageNo: Positive; auditPath: string): BatchSum
       inc result.failCount
 ```
 
-Key points
+## Key points
 - `processOne` stays straight-line and lets failures propagate.
 - `writeAuditLine` is the one translation boundary because it adds local audit context.
 - `runBatch` is the place where exceptions become per-item output.

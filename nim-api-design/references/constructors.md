@@ -24,8 +24,7 @@ Optional compatibility wrapper when shared identity is part of the contract:
 
 ```nim
 type
-  CatalogRef = ref object
-    items: seq[string]
+  CatalogRef = ref Catalog
 
 proc newCatalog(initialSize = 8): CatalogRef =
   new(result)

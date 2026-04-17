@@ -3,7 +3,7 @@
 ```
 src/
 ├── bindings/
-│   └── foo_raw.nim  # Raw FFI — importc procs, C types, constants only
+│   └── foo_raw.nim  # Raw FFI — importc procs, C types, constants, ownership hooks
 └── foo.nim          # Ergonomic wrapper
 ```
 
@@ -30,6 +30,8 @@ type
 
   PixelFormat* = distinct cint
 
+proc `==`*(a, b: PixelFormat): bool {.borrow.}
+
 const
   FormatUncompressedR8g8b8a8* = PixelFormat(1)
 
@@ -40,12 +42,6 @@ proc libUnloadTexture*(texture: Texture)
 proc libDrawTexture*(texture: Texture; source, dest: Rect; color: Color)
 
 {.pop.}
-```
-
-```nim
-# foo.nim
-import ./bindings/foo_raw
-export foo_raw
 
 proc `=destroy`*(t: Texture) =
   libUnloadTexture(t)
@@ -53,6 +49,12 @@ proc `=wasMoved`*(x: var Texture) =
   x.id = 0
 proc `=dup`*(src: Texture): Texture {.error.}
 proc `=copy`*(dest: var Texture; src: Texture) {.error.}
+```
+
+```nim
+# foo.nim
+import ./bindings/foo_raw
+export foo_raw
 
 proc loadTexture*(path: string): Texture =
   result = libLoadTexture(path.cstring)
@@ -65,7 +67,7 @@ proc drawTexture*(texture: Texture; src, dest: Rect; tint: Color) {.inline.} =
 
 ## Rules
 
-- Raw module: `importc` procs, C types, constants only. No Nim logic.
+- Raw module: `importc` procs, C types, constants, and ownership hooks. Hooks must be in the same module as the type.
 - Wrapper imports raw with `import` + `export` — gives downstream access to both layers.
 - Wrapper imports from raw — never the reverse.
 - Struct types (`Color`, `Rect`, `Texture`) pass through as-is — do not wrap them in Nim types.

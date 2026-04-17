@@ -5,7 +5,7 @@ A type that manually allocates backing storage and owns all elements. Copy produ
 ```nim
 type
   Container = object
-    data: ptr int
+    data: ptr UncheckedArray[int]
     len: int
 
 proc `=destroy`*(x: Container) =
@@ -19,7 +19,7 @@ proc `=wasMoved`*(x: var Container) =
 proc `=dup`*(src: Container): Container {.nodestroy.} =
   result = Container(len: src.len, data: nil)
   if src.data != nil and src.len > 0:
-    result.data = cast[ptr int](alloc(src.len * sizeof(int)))
+    result.data = cast[ptr UncheckedArray[int]](alloc(src.len * sizeof(int)))
     copyMem(result.data, src.data, src.len * sizeof(int))
 
 proc `=copy`*(dest: var Container; src: Container) =
@@ -28,15 +28,15 @@ proc `=copy`*(dest: var Container; src: Container) =
   `=wasMoved`(dest)
   dest.len = src.len
   if src.data != nil and src.len > 0:
-    dest.data = cast[ptr int](alloc(src.len * sizeof(int)))
+    dest.data = cast[ptr UncheckedArray[int]](alloc(src.len * sizeof(int)))
     copyMem(dest.data, src.data, src.len * sizeof(int))
 
 proc initContainer(items: openArray[int]): Container =
   result = Container(len: items.len, data: nil)
   if items.len > 0:
-    result.data = cast[ptr int](alloc(items.len * sizeof(int)))
+    result.data = cast[ptr UncheckedArray[int]](alloc(items.len * sizeof(int)))
     for i in 0..<items.len:
-      (cast[ptr UncheckedArray[int]](result.data))[i] = items[i]
+      result.data[i] = items[i]
 ```
 
 Key points:
