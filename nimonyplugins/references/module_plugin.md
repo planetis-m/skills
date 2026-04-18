@@ -17,7 +17,7 @@ echo "more production code"
 # stripblocks.nim
 import nimonyplugins
 
-proc transform(n: Node): Tree =
+proc transform(n: NifCursor): NifBuilder =
   result = createTree()
   var n = n
   if n.stmtKind == StmtsS: inc n

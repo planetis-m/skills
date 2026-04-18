@@ -13,7 +13,7 @@ type
 import nimonyplugins
 import std/os
 
-proc transform(n: Node): Tree =
+proc transform(n: NifCursor): NifBuilder =
   result = createTree()
   var n = n
   if n.stmtKind == StmtsS: inc n

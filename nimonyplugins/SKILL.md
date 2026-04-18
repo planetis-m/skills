@@ -1,6 +1,6 @@
 ---
 name: nimonyplugins
-description: Write and debug Nimony plugins for compile-time code generation and DSL rewrites, including plugin-backed templates, `Node` traversal, `Tree` construction, subtree reuse, and source-level plugin errors. Use when replacing Nim macros with Nimony plugins or building a compile-time rewrite in the Nimony plugin system.
+description: Write and debug Nimony plugins for compile-time code generation and DSL rewrites, including plugin-backed templates, `NifCursor` traversal, `NifBuilder` construction, subtree reuse, and source-level plugin errors. Use when replacing Nim macros with Nimony plugins or building a compile-time rewrite in the Nimony plugin system.
 ---
 
 # Nimony Plugins
@@ -32,17 +32,17 @@ There are three kinds of plugins. All share the same `nimonyplugins` API.
 - Expose the rewrite through a public template such as `template foo*(spec: string): untyped {.plugin: "fooplugin".}`.
 - Keep the plugin logic in a separate plugin module.
 - Start the plugin with `let root = loadPluginInput()`. For type plugins, also load `loadPluginInput(paramStr(3))` for the triggering type definitions.
-- Read the relevant input node, build a `Tree`, then finish with `saveTree(resultTree)` or `saveTree(errorTree("invalid plugin input"))`.
+- Read the relevant input node, build a `NifBuilder`, then finish with `saveTree(resultTree)` or `saveTree(errorTree("invalid plugin input"))`.
 - Keep runtime helpers in the public module. Keep NIF traversal and code generation in the plugin module.
 - Template plugins can be hidden inside imported modules so callers do not see the `.plugin` pragma.
 
 ### Mental Model
 
-- `Tree` is the mutable COW builder. Copying a Tree shares the payload; the next mutation detaches it.
-- `Node` wraps a `Cursor`, which is a reference-counted shared pointer into token data. Copying a Node increments the refcount. Nodes keep data alive even after the source Tree is destroyed.
-- `snapshot` takes `var Tree` (borrows, does not consume). It calls `beginRead` under the hood, which shares buffer ownership. The tree stays writable; mutation detaches the buffer via COW.
+- `NifBuilder` is the mutable COW builder. Copying a NifBuilder shares the payload; the next mutation detaches it.
+- `NifCursor` wraps a `Cursor`, which is a reference-counted shared pointer into token data. Copying a NifCursor increments the refcount. NifCursors keep data alive even after the source NifBuilder is destroyed.
+- `snapshot` takes `var NifBuilder` (borrows, does not consume). It calls `beginRead` under the hood, which shares buffer ownership. The tree stays writable; mutation detaches the buffer via COW.
 - `snapshot` requires a non-empty tree. Guard with `isEmpty(tree)` first.
-- Treat `Tree` as owned mutable output. Treat `Node` as a stable read handle that independently owns its data.
+- Treat `NifBuilder` as owned mutable output. Treat `NifCursor` as a stable read handle that independently owns its data.
 
 ### Construction
 
@@ -58,7 +58,7 @@ There are three kinds of plugins. All share the same `nimonyplugins` API.
 - `inc(node)` advances one token.
 - `skip(node)` skips the whole current subtree.
 - Do not use `inc` when you mean `skip`.
-- Copy a `Node` for lookahead without committing movement on the original.
+- Copy a `NifCursor` for lookahead without committing movement on the original.
 - Use `kind`, `stmtKind`, `exprKind`, `typeKind`, `otherKind`, and `pragmaKind` to inspect the current node.
 - Use `symId`, `symText`, `identText`, `stringValue`, `charLit`, `intValue`, `uintValue`, and `floatValue` to read payload.
 
@@ -72,9 +72,9 @@ There are three kinds of plugins. All share the same `nimonyplugins` API.
 ### NIF Templates
 
 - `%~` parses a NIF template string with `$name` substitutions from a bindings table.
-- `nifFragment(str)` parses a literal NIF fragment string into a Tree. Use it when there are no substitutions.
+- `nifFragment(str)` parses a literal NIF fragment string into a NifBuilder. Use it when there are no substitutions.
 - `$$` produces a literal dollar sign inside a NIF template.
-- The `~` operator converts values to Tree fragments: `~node` copies the subtree, `~"str"` makes a string literal, `~ident("name")` makes an identifier, `~42` makes an integer literal, `~-14` makes a float literal, `~'x'` makes a char literal, `~true`/`~false` makes a boolean node, `~tree` passes a Tree through unchanged.
+- The `~` operator converts values to NifBuilder fragments: `~node` copies the subtree, `~"str"` makes a string literal, `~ident("name")` makes an identifier, `~42` makes an integer literal, `~-14` makes a float literal, `~'x'` makes a char literal, `~true`/`~false` makes a boolean node, `~tree` passes a NifBuilder through unchanged.
 
 ### Errors And IO
 
@@ -91,11 +91,11 @@ There are three kinds of plugins. All share the same `nimonyplugins` API.
 2. Decide the public entrypoint.
    Export a template such as `template foo*(spec: string): untyped {.plugin: "fooplugin".}` from the user-facing module.
 3. Read the plugin input.
-   `loadPluginInput()` gives you the input root as `Node`.
+   `loadPluginInput()` gives you the input root as `NifCursor`.
 4. Parse before generating when that simplifies the rewrite.
    `smartcli` parses its DSL string into ordinary Nim objects first, then emits the output tree.
-5. Build output in one `Tree`.
-   Use `withTree`, subtree reuse, and helper procs that append into `var Tree`.
+5. Build output in one `NifBuilder`.
+   Use `withTree`, subtree reuse, and helper procs that append into `var NifBuilder`.
 6. Finish explicitly.
    End with `saveTree(resultTree)` or `saveTree(errorTree("invalid plugin input"))`.
 
@@ -105,10 +105,10 @@ There are three kinds of plugins. All share the same `nimonyplugins` API.
 |---------|----------------|
 | Writing a Nim macro for a new Nimony DSL | Plugins are the compile-time rewrite mechanism in Nimony |
 | Mixing the public template and the plugin rewrite logic in one module | It tangles runtime API and NIF generation logic |
-| Treating `Tree` as a read cursor | `Tree` is output storage; `Node` is the read handle |
+| Treating `NifBuilder` as a read cursor | `NifBuilder` is output storage; `NifCursor` is the read handle |
 | Using `inc` instead of `skip` on a subtree | `inc` leaves you inside the subtree |
 | Confusing `takeTree` with `addSubtree` | One advances the reader and the other does not |
-| Assuming a Node is invalidated when its source Tree is mutated or destroyed | The Cursor refcount keeps the data alive; Tree mutation detaches the buffer via COW |
+| Assuming a NifCursor is invalidated when its source NifBuilder is mutated or destroyed | The Cursor refcount keeps the data alive; NifBuilder mutation detaches the buffer via COW |
 | Snapshotting an empty tree | `snapshot(tree)` asserts on empty input |
 | Rebuilding correct input subtrees atom by atom | It is slower, noisier, and easier to get wrong than subtree reuse |
 | Crashing on invalid plugin input | Emit `errorTree("invalid plugin input")` so the compiler reports a source-level plugin error |
@@ -122,7 +122,8 @@ There are three kinds of plugins. All share the same `nimonyplugins` API.
 
 ## Changelog
 
-- 2026-04-17: Updated for Cursor-as-shared-pointer. Node wraps Cursor directly; snapshot takes var Tree; nodes outlive source trees.
+- 2026-04-17: Updated for Cursor-as-shared-pointer. NifCursor wraps Cursor directly; snapshot takes var NifBuilder; nodes outlive source trees.
+- 2026-04-18: Renamed Node to NifCursor, Tree to NifBuilder to match upstream API.
 - 2026-04-15: Added plugin kinds, Nim 2 compilation, path resolution, StmtsS protocol, type plugin dual input, validation scope, NIF template $$ escape.
 - 2026-04-11: End-to-end plugin structure, plugin-backed templates, loadPluginInput/saveTree flow, sample references.
 - 2026-04-09: Initial skill. Node lifetime, NIF templates, validation edges, plugin IO overloads.

@@ -32,7 +32,7 @@ proc popc8(i: int): int =
     inc c
   c
 
-proc tr(n: Node): Tree =
+proc tr(n: NifCursor): NifBuilder =
   result = createTree()
   result.withTree BracketX, n.info:
     for i in 0..<256:
