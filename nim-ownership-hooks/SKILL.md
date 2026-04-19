@@ -44,11 +44,11 @@ Custom hooks are needed only for non-managed resources: raw pointers (`ptr T`) t
 - Deep-copy types: protect against self-assignment (`if dest.data == src.data: return`). Without it, `x = x` destroys the source before copying.
 - After the guard: `=destroy(dest)`, `=wasMoved(dest)`, then rebuild from source. Check that source data is non-nil before allocating.
 - For move-only types, use `{.error.}` (bare pragma, no custom message — the compiler ignores custom error strings).
-- For inverted-counter refcounted types: `=copy` does destroy-then-share. No pointer self-assignment guard needed — the counter increment balances the destroy.
+- For refcounted types: `=copy` does destroy-then-share. No pointer self-assignment guard needed — the counter increment balances the destroy.
 
 **`=dup`**
 - Deep-owning containers: mark with `{.nodestroy.}` and build a fresh copy. Call `=dup` on each child element (not `copyMem`) so child hooks run.
-- Inverted-counter refcounted types: increment the counter and share the pointer. No `{.nodestroy.}` needed — the counter balances the implicit return-path destroy.
+- Refcounted types: increment the counter and share the pointer. No `{.nodestroy.}` needed — the counter balances the implicit return-path destroy.
 
 **`=trace`**
 - Only when all three conditions hold: the type manually owns storage, stored values can participate in ORC cycles, and ORC needs to traverse them.
@@ -135,7 +135,6 @@ Test these scenarios for every custom-hook type:
 | `ensureMove` on lvalue with destructor | Compile-time error. Only valid for rvalues and sink params. |
 | `alloc` in multi-threaded code | Must use `allocShared`/`deallocShared` instead. |
 | Custom error string in `{.error: "msg"}` on `=copy` | The compiler ignores custom error messages. Use bare `{.error.}`. |
-| Mixing counter conventions in one type | Causes double-free or leak. |
 
 ## 5. References
 
@@ -150,5 +149,4 @@ Test these scenarios for every custom-hook type:
 - 2026-04-07: Added zero-length guards, non-var destroy preference
 - 2026-04-07: Added refcounted nuances from cowstrings analysis
 - 2026-04-08: Restructured — examples moved to references/, workflow-focused SKILL.md
-- 2026-04-08: Standardized shared-ownership guidance on the inverted counter convention
 - 2026-04-17: Removed cow_string.md (redundant with shared_refcounted.md);

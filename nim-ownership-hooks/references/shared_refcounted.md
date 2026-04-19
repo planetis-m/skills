@@ -2,8 +2,6 @@
 
 Multiple variables share ownership of one heap resource. The last owner destroys it.
 
-This repo uses the **inverted counter**: `0` means exclusively owned, `>0` means shared. Copying increments; the last destroy frees.
-
 ## Refcounted handle — separate counter
 
 Use when wrapping an opaque C object whose layout you don't control. The reference count lives in its own heap cell alongside the object pointer.
@@ -91,4 +89,3 @@ Key points:
 - `=copy` increments **before** destroying dest, same self-assign protection as the separate-counter pattern
 - `allocShared`/`deallocShared` required because atomic refcounting implies cross-thread use
 - `newSharedPtr` uses `{.nodestroy.}` because `result` is being built, not returned from a share
-- Counter starts at `0` — one unique owner — matching the inverted convention

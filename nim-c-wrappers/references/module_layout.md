@@ -44,7 +44,7 @@ proc libDrawTexture*(texture: Texture; source, dest: Rect; color: Color)
 {.pop.}
 
 proc `=destroy`*(t: Texture) =
-  libUnloadTexture(t)
+  if t.id > 0: libUnloadTexture(t)
 proc `=wasMoved`*(x: var Texture) =
   x.id = 0
 proc `=dup`*(src: Texture): Texture {.error.}
