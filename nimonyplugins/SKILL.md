@@ -122,8 +122,8 @@ There are three kinds of plugins. All share the same `nimonyplugins` API.
 
 ## Changelog
 
-- 2026-04-17: Updated for Cursor-as-shared-pointer. NifCursor wraps Cursor directly; snapshot takes var NifBuilder; nodes outlive source trees.
-- 2026-04-18: Renamed Node to NifCursor, Tree to NifBuilder to match upstream API.
-- 2026-04-15: Added plugin kinds, Nim 2 compilation, path resolution, StmtsS protocol, type plugin dual input, validation scope, NIF template $$ escape.
-- 2026-04-11: End-to-end plugin structure, plugin-backed templates, loadPluginInput/saveTree flow, sample references.
-- 2026-04-09: Initial skill. Node lifetime, NIF templates, validation edges, plugin IO overloads.
+- 2026-04-09: Initial skill.
+- 2026-04-11: Added plugin-backed templates, loadPluginInput/saveTree flow.
+- 2026-04-15: Added plugin kinds, Nim 2 compilation, StmtsS protocol, validation scope.
+- 2026-04-17: Updated NifCursor as shared-pointer wrapper.
+- 2026-04-18: Renamed Node to NifCursor, Tree to NifBuilder.

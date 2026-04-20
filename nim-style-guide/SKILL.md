@@ -51,6 +51,32 @@ Larger examples live under `references/`.
 - Group related fields with the same type when it improves readability.
 - When using object constructors, set the fields you want to override and omit the fields that should keep their defaults.
 
+## Whitespace Sensitivity
+
+Nim is whitespace-sensitive in three specific places. Violating any of these produces compile errors.
+
+- **No space before `[` in type annotations.**
+  - `array[0..4, bool]` compiles. `array [0..4, bool]` does not.
+  - The same applies to `seq[string]`, `Table[string, int]`, etc.
+
+- **No space between a proc name and `(` when calling with 2+ arguments.**
+  - `foo(1, 2)` passes two `int` arguments.
+  - `foo (1, 2)` passes a single `(int, int)` tuple. Nim treats the parenthesized comma-list as a tuple constructor.
+
+- **Spaces required around `..` and `..<` in slice and range expressions.**
+  - `0 .. high(s)` and `0 ..< s.len` are correct.
+  - `0..high(s)` may fail in some contexts (notably `range[0..<n]` does not compile; use `range[0 .. n-1]` instead).
+
+## Line Continuation
+
+Nim has no line-continuation character. A statement continues to the next line when the current line ends in:
+
+- an operator (`and`, `or`, `+`, `&`, etc.)
+- a comma `,`
+- an opening bracket `(`, `[`, `{`
+
+The continued line must be indented further than the statement that started it.
+
 ## Control Flow
 
 - Prefer straightforward `if/elif/else` and explicit loop conditions.
@@ -92,5 +118,6 @@ Larger examples live under `references/`.
 
 # Changelog
 
-- 2026-04-11: Refined the guide around Zen of Nim and stdlib defaults. Added explicit guidance for `func` as a checked purity contract and `proc`/`func` over `method` for ordinary helpers. Simplified wording throughout.
-- 2026-04-09: Added the in-repo verified `nim-style-guide` skill as a standalone, opinionated style guide.
+- 2026-04-09: Created as a standalone opinionated style guide.
+- 2026-04-11: Added `func` purity contract guidance.
+- 2026-04-20: Added whitespace sensitivity and line continuation rules.

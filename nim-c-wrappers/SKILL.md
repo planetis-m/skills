@@ -115,5 +115,4 @@ Struct types: `object` in C order. Fixed arrays: `array[N, T]`. Pointer+length: 
 
 ## Changelog
 
-- 2026-04-09: Initial verified skill created from the original `nim-c-wrappers` guidance.
-- 2026-04-09: Refined the verified guidance for dynlib loading, nested destruction, callback userdata registries, and multi-module wrapper layout.
+- 2026-04-09: Initial verified skill. Added dynlib loading, nested destruction, callback registries, multi-module layout.

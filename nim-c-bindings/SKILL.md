@@ -78,5 +78,4 @@ Rules for writing portable Nim-to-C bindings and cross-platform CI/release workf
 
 ## Changelog
 
-- 2026-04-09: Initial verified skill created from the original `nim-c-bindings` guidance.
-- 2026-04-09: Refined the linker/runtime guidance for system-installed libs and Linux `$ORIGIN` rpath usage.
+- 2026-04-09: Initial verified skill. Added linker/runtime guidance for system-installed libs and `$ORIGIN` rpath.

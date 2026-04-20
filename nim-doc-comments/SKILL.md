@@ -59,5 +59,4 @@ Larger examples live in `references/`.
 
 ## Changelog
 
-- 2026-04-09: Verified skill created from 14 empirically tested claims (all passing on Nim 2.3.1/ORC).
-- 2026-04-09: Added empirically verified wrong-placement cases for proc docs above signatures and standalone docs above declarations inside `type`/`const` blocks.
+- 2026-04-09: Initial verified skill with wrong-placement cases for proc and type/const block docs.

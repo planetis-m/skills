@@ -88,5 +88,5 @@ proc flushReady(state: var State; ids: openArray[string]; out: var seq[string]) 
 
 ## Changelog
 
-- 2026-04-11: Refined the skill around Zen of Nim and stdlib parser patterns. Added explicit guidance for plain-object state, top-level orchestration helpers, explicit branching over runtime dispatch, and nested proc capture semantics.
-- 2026-04-09: Verified skill created from the initial code-organization dataset.
+- 2026-04-09: Initial verified skill.
+- 2026-04-11: Added plain-object state, top-level orchestration, nested proc capture guidance.

@@ -96,5 +96,5 @@ Reference examples live in `references/`.
 
 ## Changelog
 
-- 2026-04-11: Refined the skill around Zen of Nim defaults: plain objects over refs, static dispatch over methods, and simpler wording throughout. Added dataset claims and tests for value-vs-ref semantics and `func` purity contracts.
-- 2026-04-08: Initial verified skill from the first refinement cycle.
+- 2026-04-08: Initial verified skill.
+- 2026-04-11: Added value-vs-ref claims and `func` purity tests.

@@ -145,8 +145,6 @@ Test these scenarios for every custom-hook type:
 
 ## 6. Changelog
 
-- 2026-04-07: Initial version
-- 2026-04-07: Added zero-length guards, non-var destroy preference
-- 2026-04-07: Added refcounted nuances from cowstrings analysis
-- 2026-04-08: Restructured — examples moved to references/, workflow-focused SKILL.md
-- 2026-04-17: Removed cow_string.md (redundant with shared_refcounted.md);
+- 2026-04-07: Initial version with zero-length guards, non-var destroy, refcounted nuances.
+- 2026-04-08: Restructured. Examples moved to `references/`.
+- 2026-04-17: Removed redundant `cow_string.md`.

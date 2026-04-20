@@ -103,7 +103,7 @@ proc loadConfig*(path: string): Config =
 
 ## Changelog
 
-- 2026-04-17: Removed retry advice (resilience, not error handling). Cleaned up frontmatter.
-- 2026-04-14: Refined failure channel guidance. Clearer `bool` vs `Option` vs parse-length.
-- 2026-04-11: Added `raises` contracts, exception base-class rules, expected-miss return channels.
 - 2026-04-09: Initial skill.
+- 2026-04-11: Added `raises` contracts, exception base-class rules, expected-miss return channels.
+- 2026-04-14: Refined failure channel guidance.
+- 2026-04-17: Removed retry advice.
