@@ -24,6 +24,8 @@ Use this skill to decide where code should raise, catch, translate, or return st
 - Catch only to recover, translate at a boundary, record failure, or clean up.
 - Keep the success path straight-line between boundaries.
 - Do not wrap each raising call in its own local `try/except`.
+- Validate at boundaries where data enters from outside the typed flow: files, network, user input, config text, FFI, and public API inputs.
+- Add fallback logic only when the caller has a useful recovery path. If failure only leaves stale or unusable state, report the boundary error plainly.
 
 ### Choose Exception Types
 
@@ -96,6 +98,7 @@ proc loadConfig*(path: string): Config =
 | Catching bare `Exception` | Also catches `Defect`, which is not recoverable application flow |
 | Adding a custom exception type with no distinct handling | Adds type noise without changing the contract |
 | Using `try/except` for cleanup | Cleanup belongs in `finally` |
+| Adding fallback logic without a useful recovery path | Preserves stale or unusable state and obscures the real boundary failure |
 
 ## References
 
@@ -107,3 +110,4 @@ proc loadConfig*(path: string): Config =
 - 2026-04-11: Added `raises` contracts, exception base-class rules, expected-miss return channels.
 - 2026-04-14: Refined failure channel guidance.
 - 2026-04-17: Removed retry advice.
+- 2026-05-08: Added boundary validation guidance.
