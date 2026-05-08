@@ -117,10 +117,8 @@ stack trace, sanitizer report, or saved artifact.
 3. **Generate bounded hypotheses.** Create at most two per risk site. Each must
    name exact input shape, attacker control, expected behavior, suspected actual
    behavior, and shortest code path.
-4. **Static trace for 5-10 minutes.** Check guards, catches, limits, consumed
-   lengths, and build-mode branches.
-5. **Write a minimal reproducer for 10-20 minutes.** Prefer direct calls before
-   integration tests. Use `doAssert`; do not rely on `assert`.
+4. **Complete the static trace.** Verify the entry point, attacker control, guards, catches, limits, consumed lengths, and build-mode branches. If any link is missing, downgrade before dynamic confirmation.
+5. **Attempt one minimal reproducer.** Prefer direct calls before integration tests. Use `doAssert`; do not rely on `assert`. Keep it bounded: one small repro file, the shortest failing input, and at most two compile/fix cycles.
 6. **Run relevant modes.** Start with:
 
    ```bash
@@ -142,8 +140,7 @@ stack trace, sanitizer report, or saved artifact.
 
 8. **Use fuzzing or integration tests only when direct reproduction is
    insufficient.** Keep the harness narrow and save inputs, commands, and logs.
-9. **Classify and report.** If confirmation exceeds the time box, downgrade to
-   `LIKELY` or `LOW` and state the missing evidence.
+9. **Classify and report.** If the reproducer does not confirm the issue, downgrade to `LIKELY` or `LOW` and state the missing evidence.
 
 # Common Mistakes
 
@@ -153,7 +150,7 @@ stack trace, sanitizer report, or saved artifact.
 | Reporting a risky API call without a reachable attacker-controlled path | API presence is not a vulnerability. |
 | Ignoring `Defect` vs `CatchableError` | `IndexDefect`, `OverflowDefect`, and `AssertionDefect` can escape ordinary recoverable-error handlers. |
 | Using precise-looking probability math | It hides uncertainty and encourages over-claiming. |
-| Spending too long on one hypothesis | Bounded confirmation keeps the audit moving and forces honest downgrades. |
+| Letting one hypothesis absorb the audit | Bounded confirmation keeps the workflow deterministic and forces honest downgrades. |
 | Treating `assert` as a reliable security check | `assert` is compiled out in `-d:danger`; use `doAssert` in tests. |
 
 # References
