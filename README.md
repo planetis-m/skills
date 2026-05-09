@@ -1,100 +1,48 @@
-# Agent Skills Repo
+# Agent Skills
 
-This repository contains custom Codex skills.
+Curated skill modules for AI-assisted Nim development and general tooling.
 
-Each skill lives in its own folder and includes a `SKILL.md` file.
+## Skills
 
-## Current skills
+| Skill | Purpose |
+|---|---|
+| `nim-api-design` | Exported types, constructors, accessors, error contracts |
+| `nim-c-bindings` | C library FFI, platform linking, cross-platform CI/release |
+| `nim-c-wrappers` | Idiomatic Nim APIs over raw C FFI bindings |
+| `nim-code-organization` | Module structure, orchestration, export surfaces |
+| `nim-debugging` | Runtime inspection, stack traces, compiler flags, sanitizers |
+| `nim-defect-analysis` | Reliability defect triage, root-cause tracing, evidence reports |
+| `nim-doc-comments` | Doc comments that `nim doc` picks up, runnable examples |
+| `nim-error-handling` | Exception vs Option, `raises` contracts, failure boundaries |
+| `nim-fuzzing` | libFuzzer harnesses, corpus management, crash triage |
+| `nim-ownership-hooks` | ARC/ORC `=destroy`, `=sink`, `=copy`, move semantics |
+| `nim-style-guide` | Naming, formatting, proc vs func vs template, control flow |
+| `nim-testing` | Block assertions, test runners, multi-config builds, sanitizers |
+| `nimonyplugins` | Nimony plugin `NifCursor`/`NifBuilder` traversal and construction |
+| `product-readme-examples` | User-facing README and example writing |
 
-- `nim-c-bindings`: Nim-to-C binding rules, platform linking, and cross-platform CI/release workflows.
-- `nim-ownership-hooks`: Nim ARC/ORC ownership hooks and move semantics guidance.
-- `nim-style-guide`: Nim formatting, naming, call-style, and readability conventions.
-- `nim-api-design`: Nim API contracts, data modeling, and accessor design guidance.
-- `nim-error-handling`: Nim exception, propagation, and failure-boundary guidance.
-- `nim-code-organization`: Nim module hygiene, orchestration structure, and export-surface guidance.
-- `product-readme-examples`: Guidance for user-facing README and example writing.
-- `nim-doc-comments`: Nim doc comment placement, writing, and `nim doc` verification guidance.
-- `nimonyplugins`: Nimony plugin `Tree`/`Node` traversal, construction, and API usage patterns.
-- `nim-c-wrappers`: Guidelines for building idiomatic Nim wrappers on top of C FFI bindings.
+## Install
 
-## Repository conventions
-
-Skill names in this repository use these conventions:
-
-- Use lowercase kebab-case only.
-- Prefer short, descriptive names over generic nouns.
-- Namespace Nim-specific skills with `nim-` when it improves clarity.
-- Use plural forms for broad guidance areas when the skill covers a category rather than one artifact.
-- Keep the skill folder name and the `name:` value in `SKILL.md` identical.
-
-## Where to install skills
-
-Codex loads skills from these scopes:
-
-- Project scope: `<project>/.agents/skills`
-- User scope: `~/.agents/skills`
-- Admin scope: `/etc/codex/skills`
-- System scope: bundled with Codex (for example `skill-creator`, `skill-installer`)
-
-Use `~/.agents/skills` for personal skills across repositories, and `<project>/.agents/skills` when a skill should apply only to one codebase.
-
-## Recommended setup for this git repo
-
-Keep this repository anywhere (for example `~/src/skills`) and symlink the skill folders into the Codex skills directory.
-
-### User-wide setup (`~/.agents/skills`)
+Symlink skills into your agent skills directory:
 
 ```bash
-mkdir -p ~/.agents/skills
+# clone anywhere
+git clone <repo-url> ~/src/skills
 
-# from this repo root
-for d in nim-c-bindings nim-ownership-hooks nim-style-guide nim-api-design nim-error-handling nim-code-organization nimonyplugins product-readme-examples nim-doc-comments nim-c-wrappers; do
-  ln -sfn "$(pwd)/$d" "$HOME/.agents/skills/$d"
-done
+# link all skills (user-wide)
+for d in ~/src/skills/*/; do ln -sfn "$d" ~/.agents/skills/$(basename "$d"); done
+
+# or clone directly
+git clone <repo-url> ~/.agents/skills
 ```
 
-### Project-only setup (`<project>/.agents/skills`)
+## Skill naming
 
-```bash
-PROJECT=/path/to/your/project
-mkdir -p "$PROJECT/.agents/skills"
-
-# from this repo root
-for d in nim-c-bindings nim-ownership-hooks nim-style-guide nim-api-design nim-error-handling nim-code-organization nimonyplugins product-readme-examples nim-doc-comments nim-c-wrappers; do
-  ln -sfn "$(pwd)/$d" "$PROJECT/.agents/skills/$d"
-done
-```
-
-Symlinked skill folders are supported, so updates in this repo are immediately reflected in linked skill locations.
-
-## Alternative: clone directly into `~/.agents/skills`
-
-If you want this repo to be your entire user skill directory:
-
-```bash
-git clone <your-repo-url> ~/.agents/skills
-```
-
-Use this only if you are okay with this repo owning that directory.
-
-## Reloading and verification
-
-- Codex usually auto-detects skill changes.
-- If a new/updated skill does not appear, restart Codex.
-- In CLI/IDE, use `/skills` (or type `$`) to confirm visibility.
-
-## Optional: disable a skill without deleting it
-
-Add to `~/.codex/config.toml`:
-
-```toml
-[[skills.config]]
-path = "/full/path/to/skill/SKILL.md"
-enabled = false
-```
-
-Then restart Codex.
+- Lowercase kebab-case.
+- `nim-` prefix for Nim-specific skills.
+- Plural form for broad guidance areas.
+- Folder name matches the `name:` field in `SKILL.md`.
 
 ## License
 
-Licensed under **CC BY-NC-SA 4.0**. See [LICENSE](LICENSE).
+CC BY-NC-SA 4.0 — see [LICENSE](LICENSE).
