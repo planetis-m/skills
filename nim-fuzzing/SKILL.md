@@ -289,7 +289,7 @@ See `references/structure_aware_fuzzing.md` for a worked example.
    standalone `.nim` file with a `doAssert`-based test. Keep the original
    crash input and sanitizer report as evidence.
 
-6. **Classify findings** using the framework from the `nim-vuln-discovery`
+6. **Classify findings** using the framework from the `nim-defect-analysis`
    skill. A fuzzer finding with an artifact and sanitizer report is
    `CONFIRMED`.
 
