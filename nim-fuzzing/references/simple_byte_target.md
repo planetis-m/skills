@@ -23,10 +23,11 @@ proc testOneInput(data: ptr UncheckedArray[byte], len: int): cint {.
   discard fuzzMe(data.toOpenArray(0, len-1))
 ```
 
-## Build config: `fuzztarget.nims`
+## Build config: `tfuzz.nims`
 
 ```nim
 --cc: clang
+--panics: on
 --define: noSignalHandler
 --define: useMalloc
 --noMain: on

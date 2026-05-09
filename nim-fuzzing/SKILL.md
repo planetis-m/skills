@@ -69,7 +69,6 @@ How to convert `ptr UncheckedArray[byte]` + `len` to Nim types:
 | string                 | `var s = newString(len); copyMem(addr s[0], data, len)` |
 | seq[T] via copyMem    | `let n = len div sizeof(T); var s = newSeq[T](n); copyMem(addr s[0], data, n * sizeof(T))` |
 | interpret as C struct  | `if len < sizeof(MyType): return 0; let p = cast[ptr MyType](data)` |
-| stream-based parsing   | `let str = newMemStream(data.toOpenArray(0, len-1))` (requires a MemStream impl) |
 
 For the copyMem patterns, the fuzzer-provided buffer is a flat byte array.
 Convert to typed Nim data after bounds-checking `len`.
@@ -105,7 +104,8 @@ proc testOneInput(data: ptr UncheckedArray[byte], len: int): cint {.
 
 ### Build config file (recommended)
 
-Place a `fuzztarget.nims` next to the harness:
+Name the config file `<harnessname>.nims` (e.g. `my_fuzzer.nims` for
+`my_fuzzer.nim`) or `config.nims`.
 
 ```nim
 --cc: clang
@@ -121,22 +121,13 @@ Place a `fuzztarget.nims` next to the harness:
 | Flag                   | Purpose |
 |------------------------|---------|
 | `--cc: clang`          | libFuzzer requires Clang. |
-| `--panics: on`         | Turns Defect into immediate crashes — no manual catch needed in harness. |
+| `--panics: on`         | Defects crash the process immediately. |
 | `--noMain: on`         | libFuzzer provides its own `main`. |
-| `--define: noSignalHandler` | Prevents Nim's signal handler from intercepting crashes before ASan. |
+| `--define: noSignalHandler` | Prevents Nim's signal handler from masking crashes before ASan. |
 | `--define: useMalloc`  | Uses C malloc so ASan tracks all allocations. |
-| `--passC:"-fsanitize=fuzzer,address,undefined"` | Enables libFuzzer + ASan + UBSan in compiler. |
+| `--passC:"-fsanitize=fuzzer,address,undefined"` | Enables libFuzzer + ASan + UBSan. |
 | `--passL:"-fsanitize=fuzzer,address,undefined"` | Links the sanitizer runtimes. |
-| `--debugger: native`   | Embeds DWARF debug info for source locations in reports. |
-
-### Single-command compilation (no config file)
-
-```bash
-nim c --cc:clang --panics:on -d:noSignalHandler -d:useMalloc --noMain:on \
-  --passC:"-fsanitize=fuzzer,address,undefined" \
-  --passL:"-fsanitize=fuzzer,address,undefined" \
-  -g my_fuzzer.nim
-```
+| `--debugger: native`   | Embeds DWARF debug info in crash reports. |
 
 ## Corpus management
 
@@ -189,22 +180,22 @@ Example:
 
 ## Standalone mode: reproduce crashes without libFuzzer
 
-Add `-d:fuzzSa` when compiling to build a standalone binary that replays
-inputs from files instead of linking libFuzzer. This requires including the
-`standalone.nim` helper (copy `libfuzzer/standalone.nim` from the libFuzzer
-project).
-
-In the harness:
+Build a standalone binary that replays inputs from files instead of
+linking libFuzzer. Add this at the bottom of the harness file:
 
 ```nim
-when defined(fuzzSa):
-  include standalone
+when defined(fuzzStandalone):
+  import std/[cmdline, syncio]
+  stderr.write "StandaloneFuzzTarget: running " & $paramCount() & " inputs\n"
+  for i in 1..paramCount():
+    var buf = readFile(paramStr(i))
+    discard testOneInput(cast[ptr UncheckedArray[byte]](cstring(buf)), buf.len)
 ```
 
 Compile:
 
 ```bash
-nim c -d:fuzzSa my_fuzzer.nim
+nim c -d:fuzzStandalone my_fuzzer.nim
 ```
 
 Run against a crash input:
@@ -213,9 +204,9 @@ Run against a crash input:
 ./my_fuzzer crash_input
 ```
 
-The standalone binary reads each argument as a file path, feeds its contents
-to `testOneInput`, and reports results. Use this to reproduce findings
-without the full fuzzer engine.
+The standalone binary reads each command-line argument as a file path,
+feeds its contents to `testOneInput`, and prints progress to stderr.
+Use this to reproduce findings without the full fuzzer engine.
 
 ## Structure-aware fuzzing with custom mutators
 
@@ -268,7 +259,7 @@ See `references/structure_aware_fuzzing.md` for a worked example.
    `crash-<hash>`, `slow-unit-<hash>`, etc. Copy them to a permanent
    location.
 
-2. **Reproduce with the standalone binary.** Compile with `-d:fuzzSa` and
+2. **Reproduce with the standalone binary.** Compile with `-d:fuzzStandalone` and
    feed the crash input. Confirm the crash is deterministic.
 
 3. **Minimize the input.** Run the fuzzer with `-minimize_crash=1`:
@@ -324,9 +315,10 @@ llvm-cov show ./my_fuzzer -instr-profile=fuzz.profdata --format=html \
    deserializes, or processes untrusted byte input. It must be callable from
    a single entry point.
 
-2. **Set up project files.** Copy `libfuzzer/fuzztarget.nim`,
-   `libfuzzer/fuzztarget.nims`, and `libfuzzer/standalone.nim` into the
-   project's test directory. Fill in `testOneInput` and `initialize`.
+2. **Set up project files.** Create the harness `.nim` file with
+   `initialize` and `testOneInput`. Create a `<harnessname>.nims`
+   config with the fuzzer flags. Optionally add the `fuzzStandalone`
+   replay block at the bottom of the harness.
 
 3. **Create a seed corpus.** Provide 1–5 minimal valid inputs in `corpus/`.
 
@@ -372,4 +364,5 @@ llvm-cov show ./my_fuzzer -instr-profile=fuzz.profdata --format=html \
 
 # Changelog
 
+- 2026-05-09: Self-contained standalone replay, renamed fuzzSa→fuzzStandalone.
 - 2026-05-08: Created and verified.
