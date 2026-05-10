@@ -1,11 +1,11 @@
 ---
 name: nim-testing
-description: Write and run Nim tests using block-based assertions, a central test runner, multi-configuration builds, and sanitizer integration. Use when setting up a Nim test suite, writing isolated test cases, running tests across debug/release/danger modes, or adding AddressSanitizer support.
+description: Write and run deterministic Nim tests, including isolated test files, expected-exception checks, multi-configuration builds, and sanitizer integration. Use when setting up a Nim test suite, testing failure behavior, running tests across debug/release/danger modes, or adding AddressSanitizer support.
 ---
 
 # Nim Testing
 
-Write and run isolated, deterministic Nim tests using `block`-based assertions. Covers project layout, an auto-discovering test runner, multi-configuration builds, and AddressSanitizer. Verified on Nim 2.3.1 with gcc 15 on Linux.
+Write deterministic Nim tests with direct assertions, isolated test files, multi-configuration runs, and optional AddressSanitizer checks.
 
 Extended examples and CI workflows live in `references/`.
 
@@ -13,53 +13,38 @@ Extended examples and CI workflows live in `references/`.
 
 ### Use `block`-based tests with `doAssert`
 
-Prefer `block` + `doAssert` over `std/unittest`:
+Import `std/assertions`. Use `block` scopes with `doAssert` and `doAssertRaises`:
 
 ```nim
+import std/assertions
+
 block add_basic:
-  doAssert add(1, 2) == 3
+  doAssert add(1, 2) == 3, "add should sum positive integers"
 
 block greet_empty:
   doAssert greet("") == "hello "
+
+block parse_bad_input:
+  doAssertRaises ValueError:
+    discard parseThing("")
 ```
 
-`doAssert` raises `AssertionDefect` on failure. The process exits with a non-zero code.
+`doAssert` raises `AssertionDefect` on failure. For catchable exceptions, `doAssertRaises` passes only when the requested exception type is raised; otherwise the test exits non-zero.
 
 ### `doAssert` vs `assert`
 
-`doAssert` raises `AssertionDefect` in **all** build modes. Plain `assert` is compiled out in `-d:danger` — silently skipped. Use `doAssert` in tests.
+`doAssert` runs in all build modes. Plain `assert` is compiled out in `-d:danger`. Use `doAssert` in tests.
 
-### `Defect` exceptions are not caught by bare `except:`
+### Use `doAssertRaises` for Expected Exceptions
 
-`AssertionDefect` inherits from `Defect`, not `CatchableError`. Bare `except:` and `except CatchableError` do **not** catch it. Use the specific type:
-
-```nim
-block catch_overflow:
-  var raised = false
-  try:
-    discard high(int) - 1 + 2
-  except OverflowDefect:
-    raised = true
-  doAssert raised
-```
-
-This applies to all `Defect` subclasses: `AssertionDefect`, `OverflowDefect`, `FieldDefect`, `IndexDefect`, etc.
-
-### Use `when defined(danger)` for mode-dependent tests
-
-`-d:danger` disables overflow checks:
+Use `doAssertRaises` for expected exceptions:
 
 ```nim
-block add_overflow:
-  when defined(danger):
-    doAssert true
-  else:
-    var raised = false
-    try:
-      discard add(high(int) - 1, 2)
-    except OverflowDefect:
-      raised = true
-    doAssert raised
+import std/assertions
+
+block parse_bad_input:
+  doAssertRaises ValueError:
+    discard parseThing("")
 ```
 
 ### Project layout
@@ -71,7 +56,6 @@ project/
   tests/
     config.nims        # shared compiler switches
     tester.nim         # central test runner (auto-discovers t*.nim)
-    thelper.nim        # shared helpers (optional)
     tbasic.nim
     tedge.nim
     terrors.nim
@@ -92,17 +76,19 @@ The compiler loads this config automatically when compiling files in `tests/`.
 ```nim
 import std/os
 
+proc fatal(msg: string) = quit "FAILURE " & msg
+
 proc exec(cmd: string) =
-  echo "Running: " & cmd
-  if execShellCmd(cmd) != 0:
-    quit "FAILURE: " & cmd, 1
+  echo "Running: ", cmd
+  if execShellCmd(cmd) != 0: fatal cmd
 
 let testDir = getCurrentDir() / "tests"
 for f in walkFiles(testDir / "t*.nim"):
   let name = f.extractFilename
-  if name == "tester.nim" or name == "thelper.nim":
-    continue
-  exec "nim c -r " & testDir / name
+  if name == "tester.nim":
+    discard
+  else:
+    exec "nim c -r " & quoteShell(testDir / name)
 
 echo "All test files completed."
 ```
@@ -111,35 +97,14 @@ Run from project root: `nim c -r tests/tester.nim`
 
 New test files are auto-discovered — no runner edits needed.
 
-### Test helper module (optional)
+### Shared Test Code
 
-For larger suites, extract into `tests/thelper.nim`:
-
-```nim
-var failures* = 0
-var passed* = 0
-
-proc check*(condition: bool; msg: string) =
-  if condition:
-    passed += 1
-  else:
-    failures += 1
-    echo "  FAIL: " & msg
-
-proc summary*() =
-  echo "Passed: " & $passed & "  Failed: " & $failures
-  if failures > 0:
-    quit "TESTS FAILED", 1
-  else:
-    echo "ALL TESTS PASSED"
-```
-
-Each test file imports `thelper` and calls `summary()` at the end.
+Keep test files self-contained when practical. If setup is repeated, extract domain helpers such as sample builders, temp-file setup, or fixture data.
 
 ## Workflow
 
 1. **Set up layout.** Create `src/`, `tests/`, and `tests/config.nims`.
-2. **Write test files.** Use `block` + `doAssert`, name with `t` prefix.
+2. **Write test files.** Name files with `t` prefix. Use `block`, `doAssert`, and `doAssertRaises`.
 3. **Create the runner.** Add `tests/tester.nim` with the auto-discover pattern.
 4. **Run all configurations:**
 
@@ -163,6 +128,7 @@ Each test file imports `thelper` and calls `summary()` at the end.
 - **Overflow checks:** Disabled in danger. Use `when defined(danger)` guards.
 - **Stack traces:** Release and danger show only the raising frame. Add `--lineTrace:on` to restore full traces.
 - **`assert`:** Compiled out in danger. Use `doAssert`.
+- **Expected exceptions:** Use `doAssertRaises`.
 
 ## AddressSanitizer
 
@@ -204,7 +170,6 @@ Then: `nim c -d:addressSanitizer -r tests/tester.nim`
 | Mistake | Why it is wrong |
 |---------|-----------------|
 | Using `assert` instead of `doAssert` | `assert` is compiled out in danger. Use `doAssert`. |
-| Using bare `except:` to catch `doAssert` failures | `AssertionDefect` is a `Defect`. Bare `except:` does not catch it. Use `except AssertionDefect` or `except Defect`. |
 | Relying on `OverflowDefect` without `when defined(danger)` | Never raised in danger mode. |
 | Running ASan without `-d:useMalloc` | Nim's default allocator may not be fully intercepted. |
 | Running ASan without `-d:noSignalHandler` | Nim's signal handler intercepts SIGSEGV before ASan reports. |
@@ -217,4 +182,5 @@ Then: `nim c -d:addressSanitizer -r tests/tester.nim`
 
 ## Changelog
 
+- 2026-05-10: Switched examples to `doAssert` / `doAssertRaises` with `std/assertions`.
 - 2026-04-20: Created and verified on Nim 2.3.1 / gcc 15 / Linux.
