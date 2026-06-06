@@ -19,7 +19,6 @@ Curated skill modules for AI-assisted Nim development and general tooling.
 | `nim-style-guide` | Naming, formatting, proc vs func vs template, control flow |
 | `nim-testing` | Block assertions, test runners, multi-config builds, sanitizers |
 | `nimonyplugins` | Nimony plugin `NifCursor`/`NifBuilder` traversal and construction |
-| `product-readme-examples` | User-facing README and example writing |
 
 ## Install
 
