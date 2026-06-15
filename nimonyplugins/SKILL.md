@@ -1,6 +1,6 @@
 ---
 name: nimonyplugins
-description: Build and debug Nimony compile-time plugins for code generation and DSL rewrites, including plugin-backed templates, module/type/import plugins, Replacer transforms, NIF traversal, and source-level plugin errors. Use when replacing Nim macros with Nimony plugins, writing or reviewing a Nimony plugin, fixing plugin output, or debugging NIF tree traversal and code generation.
+description: Build and debug Nimony compile-time plugins for code generation and DSL rewrites. Use when replacing Nim macros with Nimony plugins, writing or reviewing plugin-backed templates or module/type/import plugins, fixing generated plugin output, or diagnosing NIF traversal and source-level plugin errors.
 ---
 
 # Nimony Plugins
