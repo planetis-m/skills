@@ -65,7 +65,7 @@ Nim is whitespace-sensitive in three specific places. Violating any of these pro
 
 - **Spaces required around `..` and `..<` in slice and range expressions.**
   - `0 .. high(s)` and `0 ..< s.len` are correct.
-  - `0..high(s)` may fail in some contexts (notably `range[0..<n]` does not compile; use `range[0 .. n-1]` instead).
+  - `0..high(s)` is fragile in range-like contexts. `range[0..<n]` does not compile; use `range[0 .. n-1]` instead.
 
 ## Line Continuation
 

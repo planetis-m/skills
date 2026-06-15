@@ -185,6 +185,6 @@ payment|user:acct:42|[redacted]|tag:pci|policy:privacy-audit-v2
 
 Notes:
 - Marker helpers like `pii` and `internalOnly` are declared so arguments resolve before the plugin output is rechecked.
-- Symbol heads may be qualified after semantic analysis, so match both identifiers and symbol names.
+- Semantic analysis can qualify symbol heads, so match both identifiers and symbol names.
 - Recursive `loopKeepTag` preserves ordinary calls such as `user(...)` and `tag("pci")`.
 - `drop` removes whole marker calls. `replace` swaps a marker call for a literal. `r.dest.addStrLit` appends the policy argument.

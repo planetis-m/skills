@@ -44,7 +44,7 @@ Inside `{.noSideEffect.}` procs, use `debugEcho` instead of `echo` — it compil
 
 ### Buffering and `stdout.flushFile`
 
-`echo` flushes automatically. `stdout.write` does not. Short output written with `stdout.write` may stay buffered and be lost if the program crashes before the buffer drains.
+`echo` flushes automatically. `stdout.write` does not. Short output written with `stdout.write` can stay buffered and be lost if the program crashes before the buffer drains.
 
 When using `stdout.write` for debug output, call `stdout.flushFile()` after each write to guarantee the output appears before any crash.
 
@@ -164,7 +164,7 @@ Slower than ASan. Does not require `-d:useMalloc`.
 | Mistake | Why it is wrong |
 |---------|-----------------|
 | Using `-d:release` and expecting full stack traces | Release disables line tracing. Add `--lineTrace:on`. |
-| Running ASan without `-d:useMalloc` | Nim's default allocator may not be fully intercepted by ASan. |
+| Running ASan without `-d:useMalloc` | Nim's default allocator is not intercepted by ASan. |
 | Running ASan without `-d:noSignalHandler` | Nim's signal handler intercepts SIGSEGV before ASan can report. |
 | Using only `--passC` without `--passL` for ASan | The sanitizer runtime must be linked. Both are required. |
 | Using `echo` inside `{.noSideEffect.}` procs | Won't compile. Use `debugEcho`. |

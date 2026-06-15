@@ -67,7 +67,7 @@ How to convert `ptr UncheckedArray[byte]` + `len` to Nim types:
 |------------------------|-----------------|
 | raw byte buffer        | `data.toOpenArray(0, len-1)` |
 | string                 | `var s = newString(len); copyMem(addr s[0], data, len)` |
-| seq[T] via copyMem    | `let n = len div sizeof(T); var s = newSeq[T](n); copyMem(addr s[0], data, n * sizeof(T))` |
+| seq[T] via copyMem     | `let n = len div sizeof(T); var s = newSeq[T](n); copyMem(addr s[0], data, n * sizeof(T))` |
 | interpret as C struct  | `if len < sizeof(MyType): return 0; let p = cast[ptr MyType](data)` |
 
 For the copyMem patterns, the fuzzer-provided buffer is a flat byte array.
@@ -84,7 +84,7 @@ finding. You don't need a manual `except Defect` block.
 types (e.g., `except ValueError`) and let everything else crash. Never use
 `except Exception` — it catches `Defect` even with panics off, masking real
 bugs. Bare `except` is equivalent to `except CatchableError` and does not
-catch `Defect` in Nim 2.3.1.
+catch `Defect`.
 
 ```nim
 proc testOneInput(data: ptr UncheckedArray[byte], len: int): cint {.

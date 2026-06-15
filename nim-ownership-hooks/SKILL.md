@@ -77,7 +77,7 @@ Only templates may safely appear between the type definition and the hooks. If a
 
 ### Edge cases
 
-- **Zero-length allocations**: Guard against `alloc(0)` in constructors and `=copy`. Only allocate when length is positive. `alloc(0)` may return nil or an invalid pointer.
+- **Zero-length allocations**: Guard against `alloc(0)` in constructors and `=copy`. Only allocate when length is positive. `alloc(0)` does not provide indexable storage.
 - **Thread-aware allocation**: When a refcounted payload may cross thread boundaries, switch between `allocShared`/`deallocShared` and `alloc`/`dealloc` using `when compileOption("threads")`.
 
 ## 3. Workflow
@@ -131,7 +131,7 @@ Test these scenarios for every custom-hook type:
 | Missing `{.nodestroy.}` on deep-owning `=dup` | Compiler destroys `result` before the caller receives it. |
 | Custom `=sink` when synthesized is fine | Adds unnecessary complexity with no benefit. |
 | `copyMem` in `=sink` or `=dup` | Bypasses child hook semantics and breaks the ownership chain for elements that have their own hooks. |
-| Missing zero-length guard | `alloc(0)` may return nil; subsequent indexing crashes. |
+| Missing zero-length guard | `alloc(0)` does not provide indexable storage; subsequent indexing is invalid. |
 | `ensureMove` on lvalue with destructor | Compile-time error. Only valid for rvalues and sink params. |
 | `alloc` in multi-threaded code | Must use `allocShared`/`deallocShared` instead. |
 | Custom error string in `{.error: "msg"}` on `=copy` | The compiler ignores custom error messages. Use bare `{.error.}`. |

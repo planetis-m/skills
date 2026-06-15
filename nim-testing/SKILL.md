@@ -171,7 +171,7 @@ Then: `nim c -d:addressSanitizer -r tests/tester.nim`
 |---------|-----------------|
 | Using `assert` instead of `doAssert` | `assert` is compiled out in danger. Use `doAssert`. |
 | Relying on `OverflowDefect` without `when defined(danger)` | Never raised in danger mode. |
-| Running ASan without `-d:useMalloc` | Nim's default allocator may not be fully intercepted. |
+| Running ASan without `-d:useMalloc` | Nim's default allocator is not intercepted by ASan. |
 | Running ASan without `-d:noSignalHandler` | Nim's signal handler intercepts SIGSEGV before ASan reports. |
 | Using only `--passC` without `--passL` for ASan | The sanitizer runtime must be linked. |
 
