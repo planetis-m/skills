@@ -22,7 +22,7 @@ echo popcnt(-1)   # 64
 
 ```nim
 # poplut.nim
-import nimonyplugins
+import plugins
 
 proc popc8(i: int): int =
   var v = i

@@ -1,41 +1,34 @@
-# Module Plugin: Strip Debug Blocks
+# Module Plugin: Full-Module Transform
 
 ```nim
 # app.nim
 import std/syncio
-{.plugin: "stripblocks".}
+{.plugin: "modulepass".}
 
-echo "production code"
-
-block:
-  echo "debug only"
-
-echo "more production code"
+echo "module plugin input"
 ```
 
 ```nim
-# stripblocks.nim
-import nimonyplugins
+# modulepass.nim
+import plugins
 
-proc transform(n: NifCursor): NifBuilder =
+proc passModule(n: NifCursor): NifBuilder =
   result = createTree()
   var n = n
-  if n.stmtKind == StmtsS: inc n
+  if n.stmtKind == StmtsS:
+    n = firstChild(n)
   result.withTree StmtsS, n.info:
-    while n.kind != ParRi:
-      if n.kind == ParLe and n.stmtKind == BlockS:
-        skip n
-      else:
-        result.takeTree n
+    while n.hasMore:
+      result.takeTree n
 
 var inp = loadPluginInput()
-saveTree transform(inp)
+saveTree passModule(inp)
 ```
 
 Key points
 - Declared as `{.plugin: "name".}` at the top of a module — no template needed.
-- Input is the whole module wrapped in `StmtsS`. Skip the wrapper with `inc n`.
-- `while n.kind != ParRi` walks all top-level children.
-- `skip n` removes a subtree; `takeTree` copies it into the output unchanged.
+- Input is the whole module wrapped in `StmtsS`. Skip the wrapper with `firstChild`.
+- `while n.hasMore` walks all top-level children (bounded, safe).
 - Must return the complete module — cannot return an empty tree.
-- Same pattern works for any `stmtKind`: strip `VarS`, inject `ProcS`, reorder children.
+- Use this low-level shape when constructing or reordering at the top level.
+- For selective recursive rewrites that keep most of the module, use `references/replacer_api.md`.

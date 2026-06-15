@@ -10,15 +10,25 @@ type
 
 ```nim
 # traceplugin.nim
-import nimonyplugins
+import plugins
 import std/os
 
 proc transform(n: NifCursor): NifBuilder =
   result = createTree()
   var n = n
-  if n.stmtKind == StmtsS: inc n
+  if n.stmtKind == StmtsS:
+    n = firstChild(n)
   result.withTree StmtsS, n.info:
-    while n.kind != ParRi:
+    while n.hasMore:
+      result.takeTree n
+
+proc typeTransform(n: NifCursor): NifBuilder =
+  result = createTree()
+  var n = n
+  if n.stmtKind == StmtsS:
+    n = firstChild(n)
+  result.withTree StmtsS, n.info:
+    while n.hasMore:
       result.takeTree n
 
 let moduleAst = loadPluginInput()          # paramStr(1): the module
