@@ -7,7 +7,7 @@ description: Build and debug Nimony compile-time plugins for code generation and
 
 Use this skill when writing or reviewing compile-time rewrites for Nimony.
 Plugins are the Nimony replacement for macros. For new compile-time DSL rewrites, use a plugin-backed template such as `template foo*(spec: string): untyped {.plugin: "fooplugin".}`. Do not write Nim macros.
-Current Nimony may still delegate parts of compilation to Nim, but plugin code should target the `plugins` module, not Nim macro APIs.
+Nimony plugin code targets the `plugins` module, not Nim macro APIs.
 
 ## Rules
 
