@@ -60,7 +60,7 @@ Use this skill to decide where code should raise, catch, translate, or return st
 1. Decide whether failure is expected.
    If it is an expected miss, return `bool`, `Option`, or a parse-length value. Do not throw.
 2. Mark the boundaries.
-   Step procs raise. Parse helpers catch once at the parse boundary. Module boundaries translate. Orchestrators record per-item failure.
+   Step procs raise. Parse helpers may catch once. Module boundaries may translate. Orchestrators may record per-item failure.
 3. Pick the exception type.
    Start with an existing type. Add a subtype only if callers need distinct handling.
 4. Write the contract.
