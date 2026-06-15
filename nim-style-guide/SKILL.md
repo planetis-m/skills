@@ -63,9 +63,9 @@ Nim is whitespace-sensitive in three specific places. Violating any of these pro
   - `foo(1, 2)` passes two `int` arguments.
   - `foo (1, 2)` passes a single `(int, int)` tuple. Nim treats the parenthesized comma-list as a tuple constructor.
 
-- **Spaces required around `..` and `..<` in slice and range expressions.**
+- **Use spaces around `..` and `..<` in slice, loop, and range expressions.**
   - `0 .. high(s)` and `0 ..< s.len` are correct.
-  - `0..high(s)` is fragile in range-like contexts. `range[0..<n]` does not compile; use `range[0 .. n-1]` instead.
+  - Range type constructors use `..`, not `..<`: `range[0 .. n-1]` compiles; `range[0 ..< n]` does not.
 
 ## Line Continuation
 
