@@ -154,7 +154,7 @@ Use `bindSym` to emit symbol references that resolve at plugin definition scope 
 - `references/template_plugin.md` — Template plugin: compile-time 256-element popcount lookup table
 - `references/module_plugin.md` — Module plugin entrypoint and full-module output contract
 - `references/type_plugin.md` — Type plugin: field-aware passthrough with paramStr(3)
-- `references/replacer_api.md` — Replacer API patterns and an end-to-end privacy audit transform
+- `references/replacer_api.md` — Replacer API contracts, safe skeletons, lookahead rules, and misuse boundaries
 
 ## Changelog
 
@@ -164,3 +164,4 @@ Use `bindSym` to emit symbol references that resolve at plugin definition scope 
 - 2026-04-17: Updated NifCursor as shared-pointer wrapper.
 - 2026-04-18: Renamed Node to NifCursor, Tree to NifBuilder.
 - 2026-06-15: Updated for current `plugins` API: Replacer, `bindSym`, bounded traversal, `copyInto`, source info helpers, and Nimony self-compilation.
+- 2026-06-17: Rewrote Replacer reference.
