@@ -17,6 +17,8 @@ proc `=wasMoved`*(x: var Buffer) =
 
 proc `=copy`*(dest: var Buffer; src: Buffer) {.error.}
 
+proc `=dup`*(src: Buffer): Buffer {.error.}
+
 proc initBuffer(items: openArray[int]): Buffer =
   result = Buffer(len: items.len, data: nil)
   if items.len > 0:

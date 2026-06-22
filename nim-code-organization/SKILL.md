@@ -85,8 +85,3 @@ proc flushReady(state: var State; ids: openArray[string]; out: var seq[string]) 
 
 - `references/orchestration_pattern.md` — Explicit state object vs nested closure for a small orchestration flow
 - `references/parser_state_pattern.md` — Stdlib-style parser/state object with top-level mutating procs
-
-## Changelog
-
-- 2026-04-09: Initial verified skill.
-- 2026-04-11: Added plain-object state, top-level orchestration, nested proc capture guidance.

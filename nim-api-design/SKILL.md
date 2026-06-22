@@ -93,8 +93,3 @@ Reference examples live in `references/`.
 - `references/accessor_pair.md` — Minimal borrowed and mutable accessor pair with one shared error helper
 - `references/distinct_types.md` — Domain types with `distinct` and borrowed operations
 - `references/parameter_and_result_shapes.md` — Parameter defaults, options objects, and named result objects
-
-## Changelog
-
-- 2026-04-08: Initial verified skill.
-- 2026-04-11: Added value-vs-ref claims and `func` purity tests.

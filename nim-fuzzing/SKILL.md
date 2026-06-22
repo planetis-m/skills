@@ -361,8 +361,3 @@ llvm-cov show ./my_fuzzer -instr-profile=fuzz.profdata --format=html \
 - `references/simple_byte_target.md` — Minimum working fuzz target for raw bytes
 - `references/structure_aware_fuzzing.md` — Custom mutator and crossover for typed data
 - `references/protocol_fuzzer.md` — Full HTTP request parser harness with error triage
-
-# Changelog
-
-- 2026-05-09: Self-contained standalone replay, renamed fuzzSa→fuzzStandalone.
-- 2026-05-08: Created and verified.

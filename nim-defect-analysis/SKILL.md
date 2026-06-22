@@ -163,11 +163,3 @@ stack trace, sanitizer report, or saved artifact.
 # References
 
 No reference files yet.
-
-# Changelog
-
-- 2026-05-09: Renamed from `nim-vuln-discovery` to `nim-defect-analysis`.
-  Revised terminology to software-quality and reliability framing.
-- 2026-05-08: Imported into `skills_experiment`; added evidence-gated triage,
-  coarse confidence scoring, bounded confirmation, and Nim-specific false
-  positive checks.

@@ -179,8 +179,3 @@ Then: `nim c -d:addressSanitizer -r tests/tester.nim`
 
 - `references/block_test_pattern.md` — Full worked example with project layout, test files, and runner
 - `references/ci_github_actions.md` — GitHub Actions CI workflow for Linux, macOS, and Windows
-
-## Changelog
-
-- 2026-05-10: Switched examples to `doAssert` / `doAssertRaises` with `std/assertions`.
-- 2026-04-20: Created and verified on Nim 2.3.1 / gcc 15 / Linux.

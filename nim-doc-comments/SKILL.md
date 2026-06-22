@@ -56,7 +56,3 @@ Larger examples live in `references/`.
 - `references/module_docs.md` — Module doc patterns (line and block syntax)
 - `references/proc_and_type_docs.md` — Proc, type, enum, const, and field doc placement
 - `references/runnable_examples.md` — runnableExamples placement and parameterized flags
-
-## Changelog
-
-- 2026-04-09: Initial verified skill with wrong-placement cases for proc and type/const block docs.

@@ -75,7 +75,3 @@ Rules for writing portable Nim-to-C bindings and cross-platform CI/release workf
 
 - `references/ci.yml` — Cross-platform CI workflow (Linux, macOS, Windows) with Nim, Atlas, and vcpkg
 - `references/release.yml` — Tagged release workflow producing per-platform archives and a draft GitHub Release
-
-## Changelog
-
-- 2026-04-09: Initial verified skill. Added linker/runtime guidance for system-installed libs and `$ORIGIN` rpath.

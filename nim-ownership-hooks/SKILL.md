@@ -47,6 +47,7 @@ Custom hooks are needed only for non-managed resources: raw pointers (`ptr T`) t
 - For refcounted types: `=copy` does destroy-then-share. No pointer self-assignment guard needed — the counter increment balances the destroy.
 
 **`=dup`**
+- Move-only types: add `=dup {.error.}`.
 - Deep-owning containers: mark with `{.nodestroy.}` and build a fresh copy. Call `=dup` on each child element (not `copyMem`) so child hooks run.
 - Refcounted types: increment the counter and share the pointer. No `{.nodestroy.}` needed — the counter balances the implicit return-path destroy.
 
@@ -69,8 +70,8 @@ Only templates may safely appear between the type definition and the hooks. If a
 
 ### Move semantics
 
-- `move(x)` forces move. Source is left in moved-from state. `=wasMoved` runs on the source.
-- `ensureMove(x)` is a compile-time annotation only. Works for rvalues and `sink` parameters. Fails compilation when applied to lvalues with destructors.
+- Use `ensureMove(x)` to transfer ownership. It only compiles when the source is last-use. If the compiler rejects it, restructure your code until it compiles — do not fall back to `move` as a first resort. After `ensureMove`, the source is dead: any use is a compile error.
+- Use `move(x)` only when restructuring is impractical. `move` always compiles but the source is not consumed — using it afterward compiles and silently reads the moved-from (default) value.
 - `sink` parameters are affine, not linear: the callee may consume the value once, or not at all.
 - Object and tuple fields are separate entities for sink last-use analysis.
 - When the compiler cannot prove a sink argument is last use, it inserts `=copy` or `=dup` before passing.
@@ -90,7 +91,7 @@ Match the type to exactly one model. Use the hook set that model requires.
 |-------|-------------|
 | Plain / auto-managed | None |
 | Borrowing / view | None. Use `lent T` for accessors. |
-| Move-only owner | `=destroy`, `=wasMoved`, `=copy` as `{.error.}` |
+| Move-only owner | `=destroy`, `=wasMoved`, `=copy` as `{.error.}`, `=dup` as `{.error.}` |
 | Deep-owning container | `=destroy`, `=wasMoved`, `=copy`, `=dup` |
 | Shared / refcounted | `=destroy`, `=wasMoved`, `=dup`, `=copy` |
 
@@ -132,9 +133,10 @@ Test these scenarios for every custom-hook type:
 | Custom `=sink` when synthesized is fine | Adds unnecessary complexity with no benefit. |
 | `copyMem` in `=sink` or `=dup` | Bypasses child hook semantics and breaks the ownership chain for elements that have their own hooks. |
 | Missing zero-length guard | `alloc(0)` may return nil; subsequent indexing crashes. |
-| `ensureMove` on lvalue with destructor | Compile-time error. Only valid for rvalues and sink params. |
+| Using `move` when `ensureMove` would compile | Source is not consumed — using it afterward compiles and silently reads the default value. |
 | `alloc` in multi-threaded code | Must use `allocShared`/`deallocShared` instead. |
 | Custom error string in `{.error: "msg"}` on `=copy` | The compiler ignores custom error messages. Use bare `{.error.}`. |
+| Skipping `=dup` on a move-only type | Add `=dup {.error.}`. Without it the compiler synthesizes one that produces nil instead of erroring. |
 
 ## 5. References
 
@@ -142,9 +144,3 @@ Test these scenarios for every custom-hook type:
 - `references/deep_owning_container.md` — manual allocation with deep copy
 - `references/shared_refcounted.md` — refcounted handle (separate counter + generic SharedPtr)
 - `references/custom_sink.md` — when and how to write a custom `=sink`
-
-## 6. Changelog
-
-- 2026-04-07: Initial version with zero-length guards, non-var destroy, refcounted nuances.
-- 2026-04-08: Restructured. Examples moved to `references/`.
-- 2026-04-17: Removed redundant `cow_string.md`.

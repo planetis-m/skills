@@ -103,11 +103,3 @@ proc loadConfig*(path: string): Config =
 ## References
 
 - `references/batch_preview_boundary.md` — Batch boundary that records per-item failures
-
-## Changelog
-
-- 2026-04-09: Initial skill.
-- 2026-04-11: Added `raises` contracts, exception base-class rules, expected-miss return channels.
-- 2026-04-14: Refined failure channel guidance.
-- 2026-04-17: Removed retry advice.
-- 2026-05-08: Added boundary validation guidance.

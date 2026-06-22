@@ -134,7 +134,3 @@ Task examples live under `references/`.
 - `references/start_project.md`: Start an Atlas project and add a package dependency.
 - `references/custom_deps_and_overrides.md`: Use a custom deps directory and Atlas override fields.
 - `references/features_and_replay.md`: Run feature-aware installs and replay pinned dependencies.
-
-# Changelog
-
-- 2026-06-16: Verified Atlas 0.14.5 workflow and examples.

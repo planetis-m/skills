@@ -174,7 +174,3 @@ Slower than ASan. Does not require `-d:useMalloc`.
 ## References
 
 - `references/arc_optimization.md` — Worked example: identifying and fixing an unnecessary copy using `--expandArc`
-
-## Changelog
-
-- 2026-04-20: Added `stdout.flushFile` buffering, `compiles` diagnostic. Created on Nim 2.3.1 / gcc 15 / Linux.

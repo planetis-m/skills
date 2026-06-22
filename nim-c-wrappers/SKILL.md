@@ -112,7 +112,3 @@ Struct types: `object` in C order. Fixed arrays: `array[N, T]`. Pointer+length: 
 - `references/callback_pattern.md` — C callback pattern using direct pointer casting
 - `references/enum_and_bitflags.md` — Typed aliases for enums and distinct types for bitflags
 - `references/module_layout.md` — Shared-types module plus selective ergonomic re-exports
-
-## Changelog
-
-- 2026-04-09: Initial verified skill. Added dynlib loading, nested destruction, callback registries, multi-module layout.

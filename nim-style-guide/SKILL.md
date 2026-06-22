@@ -115,9 +115,3 @@ The continued line must be indented further than the statement that started it.
 # References
 
 - `references/core_patterns.md`: Simple default patterns for imports, callable kinds, wrapping, locals, and constructors.
-
-# Changelog
-
-- 2026-04-09: Created as a standalone opinionated style guide.
-- 2026-04-11: Added `func` purity contract guidance.
-- 2026-04-20: Added whitespace sensitivity and line continuation rules.
