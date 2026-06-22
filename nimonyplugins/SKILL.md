@@ -16,7 +16,7 @@ Nimony plugin code targets the `plugins` module, not Nim macro APIs.
 - Resolve the nimony executable: `readlink -f "$(command -v nimony)"`.
 - If the resolved path ends with `/bin/nimony`, open `../src/nimony/lib/plugins.nim` from there.
 - Otherwise open `src/nimony/lib/plugins.nim` under the executable's directory.
-- Plugin modules are compiled with Nimony itself. The compiler invokes a separate `nimony c` invocation per plugin and caches the result.
+- Plugin modules are compiled with Nimony itself. The compiler invokes a separate `nimony c` invocation per plugin and caches the result. Each unique plugin path compiles to its own cached binary — even if two paths resolve to identical source files. Warm rebuilds reuse the cached binaries; only cold builds pay the compilation cost.
 - The plugin path in `{.plugin: "path"}` is relative to the directory of the source file that contains the pragma, not the call site.
 
 ### Plugin Kinds
