@@ -23,18 +23,22 @@ Curated skill modules for AI-assisted Nim development and general tooling.
 
 ## Install
 
-Symlink skills into your agent skills directory:
+Clone anywhere, then run `install.sh` to symlink skills into one or more
+agent roots. The script also prunes stale symlinks for skills that have
+been removed or renamed.
 
 ```bash
-# clone anywhere
-git clone <repo-url> ~/src/skills
+git clone <repo-url> ~/src/nim-skills
+cd ~/src/nim-skills
 
-# link all skills (user-wide)
-for d in ~/src/skills/*/; do ln -sfn "$d" ~/.agents/skills/$(basename "$d"); done
-
-# or clone directly
-git clone <repo-url> ~/.agents/skills
+./install.sh                          # default: ~/.agents
+./install.sh ~/.claude                 # Claude Code
+./install.sh ~/.agents ~/.claude       # multiple targets
+./install.sh -n ~/.claude              # dry run
 ```
+
+Skills are linked into `TARGET/skills/<skill-name>`. Re-run after `git pull`
+to pick up new skills and prune deleted ones. See `./install.sh --help`.
 
 ## Skill naming
 
