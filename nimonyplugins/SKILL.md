@@ -23,12 +23,12 @@ Plugin modules import `plugins` and are compiled by Nimony itself, not Nim.
 There are five plugin kinds:
 
 - Template: `template f(...) {.plugin: "p".}` receives
-  `(stmts <template-name> <args...>)`. Use `pluginName(root)` and
-  `callArgs(root)`. Its output is semantically checked again.
+  `(stmts <template-name> <args...>)`. Use `callArgs(root)` to read the
+  arguments. Its output is semantically checked again.
 - For-loop: `iterator f(...) {.plugin: "p".}` receives
   `(forcall <iterator-name> (callargs ...) (unpackflat|unpacktup ...) <body>)`.
-  Use `pluginName`, `forLoopCallArgs`, `forLoopVars`, and `forLoopBody`. The
-  body is already typed; transformed output is semantically checked again.
+  Use `forLoopCallArgs`, `forLoopVars`, and `forLoopBody`. The body is already
+  typed; transformed output is semantically checked again.
 - Module: `{.plugin: "p".}` receives the semantically checked full module and
   must return the full module. Output is not checked again.
 - Type: `type T {.plugin: "p".} = ...` receives the full module through
@@ -36,6 +36,9 @@ There are five plugin kinds:
   `loadTypeDefinitions()`. It must return the full module; output is not
   checked again.
 - Import: `import (path/foo) {.plugin: "p".}` transforms an imported module.
+
+When multiple templates or iterators name the same plugin path, use
+`pluginName(root)` to dispatch them inside that one executable.
 
 Do not manually decode template or for-loop roots when the named helpers
 express the protocol.

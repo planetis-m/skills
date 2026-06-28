@@ -13,9 +13,6 @@ template repeated*(text: string; count: int): string {.plugin: "repeatedplug".}
 import plugins
 
 proc transform(root: NifCursor): NifBuilder =
-  if pluginName(root) != "repeated":
-    return errorTree("unexpected template plugin", root)
-
   var arg = callArgs(root)
   if not arg.hasMore or arg.kind != StrLit:
     return errorTree("repeated expects a string literal", arg)
@@ -51,8 +48,7 @@ echo "TEMPLATE: PASS"
 
 ## Key points
 
-- `pluginName` identifies the invoked template and `callArgs` starts at its
-  first argument.
+- `callArgs` starts at the template’s first argument.
 - Invalid call-site input becomes an `errorTree` with source location.
 - A template plugin can return one expression; its output is semantically
   checked at the call site.

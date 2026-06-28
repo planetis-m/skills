@@ -13,9 +13,6 @@ iterator repeat*(count: int): int {.plugin: "repeatplug".}
 import plugins
 
 proc transform(root: NifCursor): NifBuilder =
-  if pluginName(root) != "repeat":
-    return errorTree("unexpected iterator plugin", root)
-
   var args = firstChild(forLoopCallArgs(root))
   if not args.hasMore or args.kind != IntLit:
     return errorTree("repeat expects an integer literal", root)
