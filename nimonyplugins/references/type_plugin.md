@@ -1,58 +1,94 @@
-# Type Plugin: Field-Aware Passthrough
+# Type Plugin
+
+A complete type plugin that rejects global variables whose type is marked
+`StackOnly`, while allowing local values.
 
 ```nim
-# traceable.nim
+# stackonly.nim
 type
-  Traceable* {.plugin: "traceplugin".} = object
-    id*: int
-    name*: string
+  StackOnly* {.plugin: "stackonlyplug".} = object
+    value*: int
 ```
 
 ```nim
-# traceplugin.nim
+# stackonlyplug.nim
 import plugins
-import std/os
 
-proc transform(n: NifCursor): NifBuilder =
+proc triggeringTypes(root: NifCursor): seq[SymId] =
+  result = @[]
+  var item = firstChild(root)
+  while item.hasMore:
+    if item.kind == Symbol:
+      result.add item.symId
+    skip item
+
+proc forbiddenGlobal(root: NifCursor; types: seq[SymId]): NifCursor =
+  result = NifCursor()
+  if root.kind == TagLit and root.stmtKind == GvarS:
+    var field = firstChild(root)
+    skip field # name
+    skip field # export marker
+    skip field # pragmas
+    if field.kind == Symbol and field.symId in types:
+      return root
+  if root.kind == TagLit:
+    var child = firstChild(root)
+    while child.hasMore:
+      result = forbiddenGlobal(child, types)
+      if result.hasMore:
+        return
+      skip child
+
+proc copyModule(root: NifCursor): NifBuilder =
+  var root = root
   result = createTree()
-  var n = n
-  if n.stmtKind == StmtsS:
-    n = firstChild(n)
-  result.withTree StmtsS, n.info:
-    while n.hasMore:
-      result.takeTree n
+  result.takeTree root
 
-proc typeTransform(n: NifCursor): NifBuilder =
+proc moduleError(message: string; at: NifCursor;
+                 info: LineInfo): NifBuilder =
   result = createTree()
-  var n = n
-  if n.stmtKind == StmtsS:
-    n = firstChild(n)
-  result.withTree StmtsS, n.info:
-    while n.hasMore:
-      result.takeTree n
+  result.withTree StmtsS, info:
+    result.addTree errorTree(message, at)
 
-let moduleAst = loadPluginInput()          # paramStr(1): the module
-let typeAst = loadPluginInput(paramStr(3)) # paramStr(3): the type def
-discard renderNode(typeAst)                # inspect fields here
-
-saveTree transform(moduleAst)
+let moduleRoot = loadPluginInput()
+let types = triggeringTypes(loadTypeDefinitions())
+let bad = forbiddenGlobal(moduleRoot, types)
+if bad.hasMore:
+  saveTree moduleError("StackOnly values must be local", bad, moduleRoot.info)
+else:
+  saveTree copyModule(moduleRoot)
 ```
 
 ```nim
 # app.nim
-import std/syncio
-import traceable
+import std / [assertions, syncio]
+import stackonly
 
-var item = Traceable(id: 1, name: "test")
-item.id = 2
-echo item.id
-echo item.name
+proc main() =
+  var item = StackOnly(value: 42)
+  assert item.value == 42
+
+main()
+echo "TYPE: PASS"
 ```
 
-Key points
-- Declared on the type: `type T {.plugin: "name".} = object ...`.
-- Fires for every module that imports and uses the type, not just the defining module.
-- `loadPluginInput()` reads the module AST; `loadPluginInput(paramStr(3))` reads the type definition.
-- The type definition AST contains field names and types — parse it to know what to intercept.
-- Must return the complete module; use `takeTree` for unchanged statements, `skip` + construction for rewrites.
-- Real extensions: inject `echo` on field writes, generate `==`/`$` from fields, add serialization hooks.
+This use is rejected at the declaration:
+
+```nim
+# bad.nim
+import stackonly
+
+var item = StackOnly(value: 42)
+```
+
+## Key points
+
+- `loadTypeDefinitions` provides the triggering type symbols;
+  `loadPluginInput` provides the typed module that uses them.
+- Type-plugin errors must still be returned as a complete `StmtsS` module.
+- Valid output preserves the complete typed module because type-plugin output
+  is not semantically checked again.
+
+## When to use
+
+Use a type plugin for validation or rewriting driven by selected types.

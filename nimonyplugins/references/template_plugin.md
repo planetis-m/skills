@@ -1,50 +1,63 @@
-# Template Plugin: Compile-Time Lookup Table
+# Template Plugin
+
+A complete template plugin that computes a string from literal arguments at
+compile time.
+
+```nim
+# repeated.nim
+template repeated*(text: string; count: int): string {.plugin: "repeatedplug".}
+```
+
+```nim
+# repeatedplug.nim
+import plugins
+
+proc transform(root: NifCursor): NifBuilder =
+  if pluginName(root) != "repeated":
+    return errorTree("unexpected template plugin", root)
+
+  var arg = callArgs(root)
+  if not arg.hasMore or arg.kind != StrLit:
+    return errorTree("repeated expects a string literal", arg)
+  let text = arg.stringValue
+  skip arg
+
+  if not arg.hasMore or arg.kind != IntLit:
+    return errorTree("repeated expects an integer literal count", arg)
+  let count = int(arg.intValue)
+  skip arg
+  if arg.hasMore or count < 0:
+    return errorTree(
+      "repeated expects two arguments and a non-negative count", root)
+
+  var value = ""
+  for _ in 0 ..< count:
+    value.add text
+  result = createTree()
+  result.addStrLit value
+
+let input = loadPluginInput()
+saveTree transform(input)
+```
 
 ```nim
 # app.nim
-import std/syncio
+import std / [assertions, syncio]
+import repeated
 
-template buildPopcountLut(): untyped {.plugin: "poplut".}
-
-let PopLut: array[256, int] = buildPopcountLut()
-
-proc popcnt(x: int): int =
-  var u = cast[uint64](x)
-  var s = 0
-  for k in 0..7:
-    s += PopLut[int((u shr (k * 8)) and 0xFF'u64)]
-  s
-
-echo popcnt(13)   # 3
-echo popcnt(255)  # 8
-echo popcnt(-1)   # 64
+assert repeated("na", 4) == "nananana"
+echo "TEMPLATE: PASS"
 ```
 
-```nim
-# poplut.nim
-import plugins
+## Key points
 
-proc popc8(i: int): int =
-  var v = i
-  var c = 0
-  while v != 0:
-    v = v and (v - 1)
-    inc c
-  c
+- `pluginName` identifies the invoked template and `callArgs` starts at its
+  first argument.
+- Invalid call-site input becomes an `errorTree` with source location.
+- A template plugin can return one expression; its output is semantically
+  checked at the call site.
 
-proc tr(n: NifCursor): NifBuilder =
-  result = createTree()
-  result.withTree BracketX, n.info:
-    for i in 0..<256:
-      result.addIntLit popc8(i)
+## When to use
 
-var inp = loadPluginInput()
-saveTree tr(inp)
-```
-
-Key points
-- Template plugins replace a bodiless `template ... {.plugin: "name".}` at each call site.
-- The plugin runs real computation and emits NIF that the compiler splices in.
-- `withTree BracketX` builds an array literal; `addIntLit` emits each element.
-- The caller types the result (`array[256, int]`) to constrain what the plugin must produce.
-- Same pattern works for CRC tables, Base64 alphabets, sine approximations — any compile-time table.
+Use a template plugin for macro-like call-site generation or a small
+compile-time DSL.

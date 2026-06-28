@@ -1,34 +1,49 @@
-# Module Plugin: Full-Module Transform
+# Module Plugin
+
+A complete module plugin that removes `discard` statements while preserving
+the rest of the semantically checked module.
+
+```nim
+# stripdiscards.nim
+import plugins
+
+proc rewrite(r: var Replacer) =
+  if r.isAtom:
+    keep r, Any
+  elif r.stmtKind == DiscardS:
+    drop r, DiscardS
+  else:
+    loopKeepTag r:
+      rewrite r
+
+var r = loadReplacer()
+rewrite r
+saveReplacer r
+```
 
 ```nim
 # app.nim
-import std/syncio
-{.plugin: "modulepass".}
+{.plugin: "stripdiscards".}
 
-echo "module plugin input"
+import std / syncio
+
+proc sideEffect(): int =
+  echo "this call is removed"
+  1
+
+discard sideEffect()
+echo "MODULE: PASS"
 ```
 
-```nim
-# modulepass.nim
-import plugins
+## Key points
 
-proc passModule(n: NifCursor): NifBuilder =
-  result = createTree()
-  var n = n
-  if n.stmtKind == StmtsS:
-    n = firstChild(n)
-  result.withTree StmtsS, n.info:
-    while n.hasMore:
-      result.takeTree n
+- `loadReplacer` starts at the full module root.
+- A recursive `loopKeepTag` pass preserves every subtree except the one
+  explicitly dropped.
+- Module-plugin output is not semantically checked again, so preserving typed
+  subtrees is the safe default.
 
-var inp = loadPluginInput()
-saveTree passModule(inp)
-```
+## When to use
 
-Key points
-- Declared as `{.plugin: "name".}` at the top of a module — no template needed.
-- Input is the whole module wrapped in `StmtsS`. Skip the wrapper with `firstChild`.
-- `while n.hasMore` walks all top-level children (bounded, safe).
-- Must return the complete module — cannot return an empty tree.
-- Use this low-level shape when constructing or reordering at the top level.
-- For selective recursive rewrites that keep most of the module, use `references/replacer_api.md`.
+Use a module plugin for whole-module analysis or transformations over already
+typed code.
