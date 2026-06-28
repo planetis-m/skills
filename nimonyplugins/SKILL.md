@@ -13,8 +13,13 @@ Plugin modules import `plugins` and are compiled by Nimony itself, not Nim.
 ### Resolve the actual API
 
 - Resolve `nimony` with `readlink -f "$(command -v nimony)"`.
-- Open the corresponding `src/nimony/lib/plugins.nim`. Treat it as the source
-  of truth because the plugin surface follows `nifcore` semantics.
+- If the resolved path ends in `/bin/nimony`, open
+  `../src/nimony/lib/plugins.nim` relative to the executable directory.
+  Otherwise open `src/nimony/lib/plugins.nim` under the executable directory.
+  Treat that file as the source of truth.
+- Plugin modules are compiled with Nimony itself. Each unique plugin path gets
+  a separate `nimony c` invocation and cached executable, even when two paths
+  contain identical source. Warm builds reuse those executables.
 - A `{.plugin: "path".}` path is relative to the source file containing the
   pragma, not the call site.
 
