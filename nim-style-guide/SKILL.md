@@ -12,10 +12,11 @@ Larger examples live under `references/`.
 
 ## Formatting
 
-- Indent with 2 spaces. Do not use tabs.
-- Wrap long lines before they become hard to scan.
-- Do not align columns with extra spaces.
-- Use `a..b` unless spaces are needed for clarity.
+- Indent blocks with 2 spaces and use spaces instead of tab characters.
+- Keep lines at or below 80 characters when practical.
+- Use ordinary spacing instead of aligning columns by hand.
+- Write range operators compactly: `a..b`, `a..<b`, and `a..^b`. Add spaces
+  when an operand contains an operator, as in `a .. -3`.
 - Indent wrapped declarations, calls, and conditions one extra level.
 
 ## Imports And Naming
@@ -32,8 +33,9 @@ Larger examples live under `references/`.
 
 - Default to `proc`.
 - Use `func` for pure helpers and pure accessors when checked purity helps.
-- Use `template` only for tiny substitutions or tiny syntax wrappers.
-- If a helper has its own control flow or mutable local state, make it a `proc` or `func`.
+- Use `template` when call-site substitution, lazy evaluation, or a
+  control-flow abstraction is required.
+- Keep ordinary runtime helper logic in a `proc` or `func`.
 - Prefer `proc` and `func` over `method`. Use `method` only when you need runtime dispatch.
 - Prefer top-level helpers for reusable logic.
 - Use a nested proc when the logic is truly local or when you want a closure.
@@ -47,48 +49,51 @@ Larger examples live under `references/`.
 - Use `let` by default.
 - Use `var` only for values that mutate.
 - Keep local declarations close to first use.
-- Keep `type` blocks at module scope.
+- Keep public and reusable types at module scope.
 - Group related fields with the same type when it improves readability.
 - When using object constructors, set the fields you want to override and omit the fields that should keep their defaults.
 
-## Whitespace Sensitivity
+## Parsing-Sensitive Whitespace
 
-Nim is whitespace-sensitive in three specific places. Violating any of these produces compile errors.
+These whitespace choices change how Nim parses code:
 
-- **No space before `[` in type annotations.**
+- **Attach `[` to a type name.**
   - `array[0..4, bool]` compiles. `array [0..4, bool]` does not.
   - The same applies to `seq[string]`, `Table[string, int]`, etc.
 
-- **No space between a proc name and `(` when calling with 2+ arguments.**
+- **Attach `(` to a callable name for a parenthesized call.**
   - `foo(1, 2)` passes two `int` arguments.
   - `foo (1, 2)` passes a single `(int, int)` tuple. Nim treats the parenthesized comma-list as a tuple constructor.
 
-- **Use spaces around `..` and `..<` in slice, loop, and range expressions.**
-  - `0 .. high(s)` and `0 ..< s.len` are correct.
-  - Range type constructors use `..`, not `..<`: `range[0 .. n-1]` compiles; `range[0 ..< n]` does not.
+- **Construct range types with `..`.**
+  - `range[0..n-1]` is a range type. `range[0..<n]` is invalid.
 
 ## Line Continuation
 
-Nim has no line-continuation character. A statement continues to the next line when the current line ends in:
+Nim has no line-continuation character. Break expressions after an operator
+or comma, or within open delimiters such as `()`, `[]`, and `{}`. Indent the
+continued line further than the statement that started it.
 
-- an operator (`and`, `or`, `+`, `&`, etc.)
-- a comma `,`
-- an opening bracket `(`, `[`, `{`
-
-The continued line must be indented further than the statement that started it.
+For constructs with a body, double indentation can distinguish continuation
+lines from the body.
 
 ## Control Flow
 
 - Prefer straightforward `if/elif/else` and explicit loop conditions.
 - Tiny predicate or search helpers may use early `return`.
 - In stateful or multi-step procs, keep one clear normal path and use `result = ...` when that reads more clearly.
-- Use early `return` for real guard exits or found values, not as the default shape of every branch.
-- Do not use `continue`. Restructure the branch instead.
+- Use `return` when its control-flow effect is required, such as a guard or
+  found value. Prefer the implicit `result` for the normal path.
+- Avoid `continue`. Express the condition as a structured branch so the
+  invariant remains visible to readers and compiler analysis. Use `continue`
+  when restructuring makes the loop less clear.
 
 # Workflow
 
 1. Pick the callable kind.
-   Start with `proc`. Switch to `func` only for pure helpers. Use `template` or `macro` only when substitution or syntax shaping is the point. Do not use `method` unless you need runtime dispatch.
+   Start with `proc`. Switch to `func` for a useful purity contract, `template`
+   for call-site substitution, and `macro` for syntax transformation. Choose
+   `method` for runtime dispatch.
 2. Write imports and names.
    Use `std/...` imports, narrow imports when practical, and keep names in normal Nim casing.
 3. Shape the control flow.
@@ -104,13 +109,13 @@ The continued line must be indented further than the statement that started it.
 |---------|-----------------|
 | Using `method` as the default callable kind | It adds runtime dispatch where a plain `proc` or `func` would usually be clearer. |
 | Hiding reusable helpers inside another proc | It makes the helper harder to reuse and easier to turn into an accidental closure. |
-| Using `template` for general helper logic | It hides normal control flow and expands code in place. |
-| Using `proc` for an obviously pure helper | It loses a useful compiler-checked purity signal. |
+| Using `template` where ordinary call semantics are sufficient | It expands code at the call site without providing useful substitution, laziness, or control-flow abstraction. |
 | Writing one argument per line by default | It adds vertical noise without adding structure. |
 | Using `var` for values that never mutate | It hides which locals actually change. |
 | Turning every branch into an early `return` in a multi-step proc | It makes the normal path harder to scan. |
-| Using `continue` | It usually means the branch can be written more clearly. |
+| Using `continue` for the ordinary loop path | A structured branch exposes the body's invariant to readers and compiler analysis. |
 | Restating every object field in a constructor | It adds noise and can hide which fields are intentionally overridden. |
+| Assigning fields into a zero-initialized `result` when the type declares field defaults | Initialize with `TypeName()` first, or use an object constructor, so declared defaults are applied. |
 
 # References
 

@@ -48,8 +48,8 @@ main()
 
 - Call `genSym()` once for each generated local.
 - Emit that `SymId` with `addSymDef`, then reuse it with `addSymUse`.
-- The compiler and plugin load/save helpers carry symbol-freshness metadata;
-  plugin code does not construct names or write `.unusedname`.
+- Reusing the generated `SymId` connects the definition to each use without a
+  textual local name.
 
 ## When to use
 

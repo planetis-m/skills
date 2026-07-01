@@ -1,54 +1,56 @@
-# Parameter And Result Shapes
-
-Use direct defaults for simple options and named objects for grouped options or semantic results.
+Use distinct domain identities, an options object for related knobs, range
+types at the callable boundary, and a named semantic result.
 
 ```nim
 type
-  WalkOptions* = object
-    relative*: bool
-    skipHidden*: bool
+  WorkspaceId* = distinct string
+
+  ScanOptions* = object
     extension*: string
+    includeHidden*: bool
     maxDepth: int
 
-  SearchSummary* = object
-    root*: string
+  ScanSummary* = object
+    workspace*: WorkspaceId
     matchedPaths*: seq[string]
     skippedCount*: int
 
-proc toWalkOptions*(extension = ".nim", relative = false, skipHidden = false,
-    maxDepth: Natural = 0): WalkOptions =
-  WalkOptions(
-    relative: relative,
-    skipHidden: skipHidden,
+proc `==`*(a, b: WorkspaceId): bool {.borrow.}
+proc `$`*(id: WorkspaceId): string {.borrow.}
+
+proc initScanOptions*(extension = ".nim"; includeHidden = false;
+    maxDepth: Natural = 0): ScanOptions =
+  ScanOptions(
     extension: extension,
+    includeHidden: includeHidden,
     maxDepth: maxDepth
   )
 
-proc findFiles*(root: string; options = toWalkOptions()): SearchSummary =
-  if root.len == 0:
-    raise newException(ValueError, "root is empty")
+proc scan*(workspace: WorkspaceId;
+    options = initScanOptions()): ScanSummary =
+  if $workspace == "":
+    raise newException(ValueError, "workspace is empty")
 
-  result = SearchSummary(
-    root: root,
-    matchedPaths: @["src/app.nim", "tests/app_test.nim"],
-    skippedCount: 0
+  result = ScanSummary(
+    workspace: workspace,
+    matchedPaths: @["src/app.nim", "tests/app_test.nim"]
   )
-```
+  if options.includeHidden:
+    result.matchedPaths.add ".config/plugin.nim"
 
-Instead of:
+let workspace = WorkspaceId("compiler")
+let normal = scan(workspace)
+doAssert normal.workspace == workspace
+doAssert normal.matchedPaths.len == 2
 
-```nim
-proc findFiles*(root: string, relative = false, skipHidden = false, extension = ".nim",
-    maxDepth: Natural = 0): tuple[root: string, matchedPaths: seq[string],
-    skippedCount: int] =
-  discard
+let hidden = scan(workspace,
+  initScanOptions(includeHidden = true, maxDepth = 3))
+doAssert hidden.matchedPaths.len == 3
 ```
 
 ## Key points
 
-- Keep one or two simple optional inputs as plain parameters with plain defaults.
-- Introduce an options object when a proc starts collecting related knobs.
-- Use range types for constrained public parameters and base types for stored fields.
-- Use a sentinel default only when that value has one unambiguous domain meaning.
-- Use a named object for semantic results; keep tuples for local glue and iterator yields.
-- Range checks run in debug and release builds, but not in danger mode or when disabled.
+- `WorkspaceId` prevents accidental mixing with arbitrary strings.
+- Related scan knobs form one options object with a simple default path.
+- `Natural` constrains the public parameter while storage remains `int`.
+- `ScanSummary` gives the public result stable names and room to evolve.

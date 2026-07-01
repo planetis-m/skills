@@ -1,39 +1,45 @@
-# Parser-Style State Object
-
-Use one explicit state object and top-level procs when a module has a step-by-step orchestration flow.
+Use an explicit value object when an incremental API preserves cursor state
+and lifecycle invariants between calls.
 
 ```nim
 type
-  WriteState = object
-    nextToWrite: int
-    ready: seq[bool]
-    writtenIds: seq[string]
+  WordScanner = object
+    input: string
+    pos: int
+    opened: bool
 
-proc markReady(state: var WriteState; idx: int) =
-  state.ready[idx] = true
+proc open(scanner: var WordScanner; input: string) =
+  scanner = WordScanner(input: input, opened: true)
 
-proc flushReady(state: var WriteState; ids: openArray[string]) =
-  while state.nextToWrite < ids.len and state.ready[state.nextToWrite]:
-    state.writtenIds.add ids[state.nextToWrite]
-    inc state.nextToWrite
+proc skipSpaces(scanner: var WordScanner) =
+  while scanner.pos < scanner.input.len and scanner.input[scanner.pos] == ' ':
+    inc scanner.pos
 
-proc run(ids: openArray[string], completionOrder: openArray[int]): seq[string] =
-  var state = WriteState(
-    nextToWrite: 0,
-    ready: newSeq[bool](ids.len),
-    writtenIds: @[]
-  )
+proc next(scanner: var WordScanner): string =
+  doAssert scanner.opened
+  scanner.skipSpaces()
+  let start = scanner.pos
+  while scanner.pos < scanner.input.len and scanner.input[scanner.pos] != ' ':
+    inc scanner.pos
+  result = scanner.input[start..<scanner.pos]
 
-  for idx in completionOrder:
-    markReady(state, idx)
-    flushReady(state, ids)
+proc close(scanner: var WordScanner) =
+  scanner = WordScanner()
 
-  result = state.writtenIds
+var scanner: WordScanner
+scanner.open("alpha beta")
+doAssert scanner.next() == "alpha"
+doAssert scanner.next() == "beta"
+doAssert scanner.next() == ""
+scanner.close()
+doAssert not scanner.opened
 ```
 
 ## Key points
 
-- Shared mutable flow lives in one named object.
-- Helper procs mutate `var WriteState` explicitly.
-- The driver proc stays short because the state flow is named and visible.
-- This matches the shape used by stdlib parser-style modules better than nested helper captures.
+- The value object owns the input, cursor, and lifecycle flag.
+- `open`, `next`, and `close` make state transitions explicit.
+- The private helper operates on the same `var WordScanner` without hidden
+  capture.
+- This shape fits incremental consumers; a one-shot split operation should
+  remain a simple proc.

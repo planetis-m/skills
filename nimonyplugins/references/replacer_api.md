@@ -42,7 +42,7 @@ Operation contracts:
 
 - Template input starts with the invoked template name, so the rewrite drops
   that child before keeping the argument.
-- Kind arguments are assertions about the current child, not search filters.
+- Kind arguments assert the current child's kind.
 - This template output is semantically checked again, so the raw `echo`
   identifier resolves at the call site.
 

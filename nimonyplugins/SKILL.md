@@ -5,8 +5,8 @@ description: Build and debug Nimony compile-time plugins for code generation and
 
 # Nimony Plugins
 
-Use Nimony plugins for compile-time rewrites; do not substitute Nim macros.
-Plugin modules import `plugins` and are compiled by Nimony itself, not Nim.
+Use Nimony plugins for compile-time rewrites. Plugin modules import `plugins`
+and are compiled by Nimony.
 
 ## Rules
 
@@ -45,67 +45,64 @@ There are five plugin kinds:
 When multiple templates or iterators name the same plugin path, use
 `pluginName(root)` to dispatch them inside that one executable.
 
-Do not manually decode template or for-loop roots when the named helpers
-express the protocol.
+Use the named protocol helpers to access template and for-loop inputs.
 
 ### Ownership and identity
 
-- `NifBuilder` is the move-only `nifcore.TokenBuf`. Never copy it.
+- `NifBuilder` is the move-only `nifcore.TokenBuf`.
 - `NifCursor` is a copyable, reference-counted, bounded read cursor.
 - `snapshot(tree)` borrows a non-empty builder. The cursor keeps its observed
   storage alive; later builder mutation detaches storage as needed.
 - `addTree` borrows its child builder, so the child remains usable afterward.
   `saveTree` accepts its completed output as a `sink` parameter.
 - `SymId` and `TagId` are numeric handles local to shared plugin pools. Resolve
-  names with `symText` and `tagText`; `$id` is not a text lookup.
+  their names with `symText` and `tagText`.
 - Plugin inputs and builders use shared preseeded pools, so handles obtained
   from plugin cursors can be reused by builder helpers.
 
 ### Build NIF
 
-- `createTree()` creates only an empty builder.
-- Use `withTree SomeEnum, info:` for known Nimony enum tags.
-- Use balanced `openTree(tag, info)` / `closeTree()` for textual or dynamic
-  tags. There is no validated `createTree(kind, children)` overload.
-- Use `NoLineInfo` only for synthetic output; preserve `n.info` for derived
-  output.
+- Start a builder with `createTree()`.
+- Add known Nimony enum tags with `withTree SomeEnum, info:`.
+- Add textual or dynamic tags with balanced `openTree(tag, info)` /
+  `closeTree()`.
+- Preserve `n.info` when deriving output from an input node. Use `NoLineInfo`
+  for synthetic output.
 - Use `addTree(dest, child)` to append an entire child builder.
 - Use `addSubtree(dest, cursor)` to copy without advancing and
   `takeTree(dest, cursor)` to copy and advance.
 - Use `copyInto(dest, cursor):` to copy a node head while transforming all
   bounded children.
 - Use `bindSym` for hygienic definition-scope symbol references.
-- Use `genSym()` for locals introduced by a plugin. Pass the returned `SymId`
-  to both `addSymDef` and `addSymUse`; do not construct local symbol names or
-  handle `.unusedname` directives yourself.
+- For each local introduced by a plugin, call `genSym()` once and pass that
+  `SymId` to `addSymDef` and every corresponding `addSymUse`.
 
 ### Traverse bounded cursors
 
 - Compound nodes have kind `TagLit`; strings have kind `StrLit`.
-- Cursors are bounded by a remaining-token count. There is no exposed closing
-  `)` token or `ParRi` sentinel.
+- Cursors are bounded by a remaining-token count.
 - `firstChild(n)` returns a cursor bounded to the current node's children.
 - `skip(n)` advances over one atom or complete subtree.
 - `into n:` and `loopInto n:` require their bodies to consume all children.
 - `balancedTokens n:` visits descendant `TagLit` nodes, excludes the root, and
   leaves `n` advanced past the root.
-- Copy a cursor for lookahead. Use `hasMore`, never a closing-token check.
+- Copy a cursor for lookahead and use `hasMore` to test its bounds.
 
 ### Prefer Replacer for selective rewrites
 
 - `keep`, `drop`, and `replace` each consume one input child.
-- Their kind argument is an assertion, not a filter.
+- Their kind argument asserts the current child's kind.
 - `keepTag` and `replaceHead` bodies must consume every child.
 - `loopKeepTag` preserves a node while iterating its children.
-- `peek` restores only the source cursor; writes to `r.dest` persist. Keep
-  lookahead read-only.
+- `peek` restores the source cursor; writes to `r.dest` persist.
 - Template replacers start at `(stmts <name> <args...>)`; consume or preserve
   the leading name deliberately before processing arguments.
 
 ### Report errors and write output
 
-- Return `errorTree(message, at)` for unsupported user input.
-- Use assertions only for plugin implementation contract violations.
+- Return `errorTree(message, at)` when user input violates the plugin's
+  contract.
+- Reserve assertions for plugin implementation contract violations.
 - `renderNode(cursor)` and `renderTree(builder)` are debugging helpers that
   omit line information.
 - `saveTree` consumes a builder. `saveReplacer` writes the replacer output.
@@ -121,25 +118,20 @@ express the protocol.
 6. Preserve correct subtrees; synthesize only what changes.
 7. Build one complete output. Return `errorTree` for invalid input, then write
    the result with `saveTree` or `saveReplacer`.
-8. Compile plugin integration tests with Nimony. Host Nim may be used only for
-   an outer test harness that launches `nimony`.
+8. Compile plugin integration tests with Nimony. A host-Nim test harness can
+   launch `nimony` when needed.
 
 ## Common Mistakes
 
 | Mistake | Correction |
 | --- | --- |
-| Compiling a plugin module with Nim | Compile it with Nimony |
-| Treating a builder as copyable COW state | Builders are move-only; snapshots are stable cursors |
-| Using `createTree(kind, children)` | Start empty, then use `withTree` or `openTree`/`closeTree` |
-| Looking for `ParLe`, `ParRi`, or `StringLit` | Use `TagLit`, bounded `hasMore`, and `StrLit` |
-| Reading the first template child as argument 1 | It is the invoked name; use `callArgs` |
-| Reading type definitions with `paramStr(3)` | Use `loadTypeDefinitions()` |
-| Appending a builder with `add` | Use `addTree` |
-| Comparing `$symId` or `$tagId` to names | Use `symText` or `tagText` |
-| Inventing names such as `tmp.0` for generated locals | Use one `genSym()` result for the definition and every use |
-| Checking argument count in a template plugin | The compiler enforces arity against the signature before the plugin runs |
-| Returning only changed statements from module/type plugins | Return the full module |
-| Emitting inside `peek` | Output persists even though the source cursor rewinds |
+| Compiling the plugin module with Nim | Compile plugin modules and integration tests with Nimony |
+| Traversing a template root as though every child were an argument | Use `callArgs(root)`; the root also contains the invoked template name |
+| Confusing `addSubtree` with `takeTree` | Use `addSubtree` to preserve the cursor position and `takeTree` to advance it |
+| Leaving children unconsumed in `into`, `keepTag`, or `replaceHead` | Consume every bounded child in the body |
+| Returning a transformed fragment from a module or type plugin | Return the complete module |
+| Reusing a textual name for a generated local | Call `genSym()` once and use its `SymId` for the definition and every use |
+| Writing output during `peek` while treating it as a dry run | Keep `peek` read-only; it restores the source cursor but not `r.dest` |
 
 ## References
 

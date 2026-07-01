@@ -1,71 +1,45 @@
-Identifying and fixing an unnecessary copy using `--expandArc`
-
-This example demonstrates how to use `--expandArc` to detect a copy where a move would suffice, and how to fix it.
-
-## Unoptimized version (with copy)
+Use `--expandArc` to explain an ownership operation, then apply `move` only
+when the source is intentionally at last use.
 
 ```nim
 type
   Container = object
     items: seq[string]
 
-proc newContainer(items: seq[string]): Container =
-  result = Container(items: items)
+proc takeFirstCopy(container: var Container): string =
+  result = container.items[0]
+  container.items.delete 0
 
-proc takeFirst(c: var Container): string =
-  result = c.items[0]
-  c.items.delete(0)
+proc takeFirstMove(container: var Container): string =
+  result = move(container.items[0])
+  container.items.delete 0
+
+var copied = Container(items: @["alpha", "beta"])
+doAssert copied.takeFirstCopy() == "alpha"
+doAssert copied.items == @["beta"]
+
+var moved = Container(items: @["gamma", "delta"])
+doAssert moved.takeFirstMove() == "gamma"
+doAssert moved.items == @["delta"]
 ```
 
-Compile and inspect:
+Inspect both reachable procedures:
 
-```
-nim c --expandArc:takeFirst test.nim
-```
-
-Output:
-
-```
---expandArc: takeFirst
-
-`=copy`(result, c.items[0])
-delete(c.items, 0)
--- end of expandArc ------------------------
+```bash
+nim c --expandArc:takeFirstCopy --expandArc:takeFirstMove example.nim
 ```
 
-The `=copy` call copies the string at `c.items[0]` into `result`. Since the element is about to be deleted from the sequence, this copy is wasteful.
-
-## Optimized version (with move)
-
-```nim
-proc takeFirstMove(c: var Container): string =
-  result = move(c.items[0])
-  c.items.delete(0)
-```
-
-Compile and inspect:
-
-```
-nim c --expandArc:takeFirstMove test.nim
-```
-
-Output:
-
-```
---expandArc: takeFirstMove
-
-result = move(c.items[0])
-delete(c.items, 0)
--- end of expandArc ------------------------
-```
-
-The `=copy` is replaced with a direct `move`. No reference count increment or string copy occurs. The ownership of the string's data buffer transfers directly to `result`.
+Look for an injected `=copy` in `takeFirstCopy` and `move` in
+`takeFirstMove`. Exact expansion text can change with compiler versions and
+surrounding code, so compare ownership operations rather than matching a whole
+listing.
 
 ## Key points
 
-- `--expandArc:<proc>` shows the compiler's injected ownership operations (copy, move, destroy, sink).
-- The target proc must be reachable from the program entry point. Uncalled procs are skipped by the analysis.
-- Look for `=copy` where the source is about to be discarded — those are optimization opportunities.
-- Replace the assignment with `move()` to eliminate the copy.
-- `--expandArc` works under `--mm:orc`, `--mm:arc`, and `--mm:atomicArc`. Test under the same mode your project uses.
-- The `--expandArc` flag also shows `=destroy` calls in `finally` blocks, which is useful for verifying cleanup order.
+- `move` is destructive: use it only when the source value is intentionally
+  discarded or reinitialized.
+- Keep the operation under test reachable from the program entry point.
+- Inspect under the memory manager used by the target project.
+- Removing a visible copy is an optimization hypothesis, not proof of a
+  meaningful speedup. Measure when performance matters.
+- Re-run behavior tests after changing ownership operations.

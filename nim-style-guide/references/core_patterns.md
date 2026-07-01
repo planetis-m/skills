@@ -1,78 +1,64 @@
-Simple default patterns for readable Nim code.
-
-# Examples
-
-## Imports
-
-Prefer grouped imports for broad use and narrow `from` imports for a small API slice.
+A complete release-note renderer showing the guide's default formatting,
+callable, local-variable, control-flow, and constructor choices.
 
 ```nim
-import std/[strutils, parseutils, uri]
+import std/strutils
 
-from std/paths import Path, isAbsolute
-```
-
-## Callable kind
-
-Default to `proc`. Use `func` for obviously pure helpers. Use `template` only for tiny substitutions. Do not use `method` unless runtime dispatch is required. Keep reusable helpers top-level; use nesting for very local logic or intentional closures.
-
-```nim
-func isAbsolutePath(path: Path): bool =
-  result = isAbsolute(path)
-```
-
-```nim
-template asString(x): string =
-  string(x)
-```
-
-## Calls And Result Style
-
-Prefer compact wrapped calls and one clear normal path.
-
-```nim
-proc buildMessage(name: string; count: int; urgent: bool): string =
-  result = formatMessage(name, count,
-    urgent = urgent,
-    includeFooter = true)
-```
-
-## Locals And Fields
-
-Use `let` for stable values, `var` for mutated state, and group related fields when it improves readability.
-
-```nim
-let item = items[idx]
-var total = 0
-```
-
-```nim
 type
-  ParseConfig = object
-    maxCount, retryLimit: int
-    strict: bool
+  ReleaseNote = object
+    title: string
+    details: string
+
+  RenderOptions = object
+    heading: string = "Changes"
+    includeUntitled: bool
+
+func normalizedTitle(title: string): string =
+  title.strip.toLowerAscii
+
+func formatNote(number: int; title, details: string): string =
+  result = $number & ". " & title
+  if details.len > 0:
+    result.add " — " & details
+
+proc renderNotes(notes: openArray[ReleaseNote];
+    options = RenderOptions()): seq[string] =
+  result.add options.heading
+  for idx in 0..<notes.len:
+    let note = notes[idx]
+    let title = normalizedTitle(note.title)
+    if title.len > 0 or options.includeUntitled:
+      result.add formatNote(idx + 1, title,
+        details = note.details.strip)
+
+let notes = [
+  ReleaseNote(title: " Added Search ", details: "new index"),
+  ReleaseNote(title: "", details: "internal"),
+  ReleaseNote(title: "Fixed Cache", details: "")
+]
+
+doAssert renderNotes(notes) == @[
+  "Changes",
+  "1. added search — new index",
+  "3. fixed cache"
+]
+
+let allNotes = renderNotes(notes,
+  RenderOptions(heading: "All changes", includeUntitled: true))
+doAssert allNotes == @[
+  "All changes",
+  "1. added search — new index",
+  "2.  — internal",
+  "3. fixed cache"
+]
 ```
 
-## Object Constructors
+## Key points
 
-When a type has sensible defaults, set only the fields you want to override.
-
-```nim
-type
-  WorkerState = object
-    retryLimit: int = 3
-    stopRequested: bool
-    label: string = "worker"
-
-proc initWorkerState(): WorkerState =
-  WorkerState()
-
-proc initNamedWorker(label: string): WorkerState =
-  WorkerState(label: label)
-```
-
-# Key points
-
-- Keep the rules simple and apply them consistently.
-- Use `proc`, `func`, and `template` for different jobs.
-- Prefer compact wrapping, `let` by default, one normal success path, and constructors that override only the fields that matter.
+- Imports use the `std/` prefix and identifiers follow ordinary Nim casing.
+- Pure transformations are `func`; the accumulating operation is a `proc`.
+- Stable locals use `let`, while the implicit `result` carries mutable output.
+- The loop keeps its normal path structured without `continue`.
+- Range operators are compact and wrapped calls use continued indentation.
+- The default constructor omits fields whose declaration defaults should
+  apply.

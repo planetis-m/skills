@@ -96,10 +96,11 @@ Reference examples live in `references/`.
 
 ## References
 
-- `references/representation_default.md` — Plain `object` default and `ref object` only when aliasing is required
-- `references/constructors.md` — `initX`, `newX`, and `toX` constructor patterns
-- `references/collection_accessors.md` — One coherent container surface with stdlib-style names
-- `references/accessor_pair.md` — Minimal borrowed and mutable accessor pair with one shared error helper
-- `references/distinct_types.md` — Domain types with `distinct` and borrowed operations
-- `references/parameter_and_result_shapes.md` — Parameter defaults, options objects, and named result objects
-- `references/parameter_ownership.md` — `T`, `var T`, `sink T`, `lent T`, and explicit ownership transfer
+- `references/representation_and_construction.md` — value data, shared identity,
+  and `initX`/`newX` construction
+- `references/lookup_and_mutation.md` — required lookup, optional membership,
+  borrowed reads, and controlled mutation
+- `references/parameter_and_result_shapes.md` — distinct identities, options,
+  constrained parameters, and semantic results
+- `references/parameter_ownership.md` — read, mutation, resizing, sink, and
+  borrowed-return parameter shapes
