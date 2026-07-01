@@ -1,14 +1,14 @@
 # Plain Object Default
 
-Use a plain `object` by default. Switch to `ref object` only when the API needs shared identity.
+Use `object` for value semantics and `ref object` for shared identity.
 
 ```nim
 type
-  Rect = object
-    x, y, w, h: int
+  Rect* = object
+    x*, y*, w*, h*: int
 
-  RectRef = ref object
-    x, y, w, h: int
+  RectRef* = ref object
+    x*, y*, w*, h*: int
 
 let a = Rect(x: 12, y: 22, w: 40, h: 80)
 var copied = a
@@ -25,7 +25,5 @@ doAssert alias.x == 10
 
 ## Key points
 
-- A plain `object` copy does not create a second access path to the same fields.
-- A `ref object` assignment aliases the same instance.
-- For plain data models, start with `object`.
-- Use `ref object` only when the caller must observe shared identity or shared mutation.
+- Assigning `Rect` copies its scalar fields, so changing `copied` does not change `a`.
+- Assigning `RectRef` aliases one instance; use a reference type only when shared identity or mutation is part of the contract.

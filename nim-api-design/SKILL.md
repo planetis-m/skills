@@ -25,7 +25,7 @@ Reference examples live in `references/`.
 
 ### Contracts
 
-- Keep constraints in types. Use `Natural`, `Positive`, ranges, enums, sets, and `distinct` types instead of weakening to `int` and re-checking manually.
+- Prefer range types for constrained public parameters. Use base types for stored fields.
 - Use `distinct` when two values share a base type but must not mix.
 - Use `func` for pure query operations when purity is part of the public contract.
 - Use `{.raises.}` only when it keeps the public exception surface clear and easy to maintain.
@@ -69,7 +69,7 @@ Reference examples live in `references/`.
 1. Choose the representation.
    Start with a plain `object`. Switch to `ref object` only if the contract needs identity or aliasing.
 2. Name the public types.
-   Use named objects for semantic results and `distinct` or range types for domain constraints.
+   Use named objects for semantic results and `distinct` types for domain identities.
 3. Name the constructor surface.
    Use `initX`, `newX`, and `toX` in the stdlib style.
 4. Design the lookup surface.
@@ -85,7 +85,7 @@ Reference examples live in `references/`.
 |---------|------------------|
 | Starting with `ref object` for plain data | It adds aliasing and shared mutation where the API does not need them |
 | Defaulting to methods or runtime dispatch | It hides behavior behind runtime polymorphism when a proc surface is simpler and clearer |
-| Weakening `Natural` or `Positive` to `int` and re-checking manually | It throws away a stronger type-level contract |
+| Weakening a constrained public parameter to `int` and re-checking manually | It throws away a stronger boundary contract |
 | Returning a silent default for required data | It hides missing-data bugs |
 | Exporting scalar `var` accessors | It leaks mutable internal state |
 | Returning `var T` for controlled state | Callers can bypass validation and related updates |

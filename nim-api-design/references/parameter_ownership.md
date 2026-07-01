@@ -1,6 +1,6 @@
 # Parameter Ownership
 
-Complete example choosing parameter modes from caller-visible ownership behavior.
+Choose parameter modes from caller-visible mutation and ownership.
 
 ```nim
 type
@@ -20,8 +20,8 @@ proc rename*(job: var Job; name: string) =
 proc add*(queue: var JobQueue; job: sink Job) =
   queue.jobs.add job
 
-proc last*(queue: JobQueue): lent Job =
-  queue.jobs[queue.jobs.high]
+proc jobs*(queue: JobQueue): lent seq[Job] =
+  queue.jobs
 
 proc example() =
   var queue: JobQueue
@@ -33,7 +33,7 @@ proc example() =
 
   var transferred = Job(name: "transferred", payload: @[3'u8])
   queue.add transferred
-  doAssert queue.last.name == "transferred"
+  doAssert jobs(queue)[^1].name == "transferred"
 
 when isMainModule:
   example()
@@ -41,8 +41,6 @@ when isMainModule:
 
 ## Key points
 
-- Use `T` when the caller's variable stays unchanged and `var T` when the proc changes it.
-- Use `sink T` when the callee stores, forwards, or otherwise takes ownership of the value.
-- Sink moves proven last-use values and copies others.
-- Use `lent T` only for a borrowed return tied to storage owned by the receiver.
-- Pass routine sink arguments normally. Use `ensureMove` only when a possible copy must be a compile-time error.
+- Use `T` when the caller's variable stays unchanged, `var T` when the proc changes it, and `sink T` when the proc takes ownership.
+- Pass sink arguments normally: Nim moves proven last-use values and copies others. Use `ensureMove` only to reject a copy.
+- Use `lent T` only for a borrowed return tied to receiver-owned storage.

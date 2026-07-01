@@ -1,20 +1,16 @@
 # Parameter And Result Shapes
 
-Use plain defaults for simple optional inputs.
-Group related knobs in one named object when a proc starts collecting too many parameters.
-Use a named object for semantic returned data.
-
-## Example
+Use direct defaults for simple options and named objects for grouped options or semantic results.
 
 ```nim
 type
-  WalkOptions = object
+  WalkOptions* = object
     relative*: bool
     skipHidden*: bool
     extension*: string
-    maxDepth*: int
+    maxDepth: int
 
-  SearchSummary = object
+  SearchSummary* = object
     root*: string
     matchedPaths*: seq[string]
     skippedCount*: int
@@ -52,6 +48,7 @@ proc findFiles*(root: string, relative = false, skipHidden = false, extension = 
 
 - Keep one or two simple optional inputs as plain parameters with plain defaults.
 - Introduce an options object when a proc starts collecting related knobs.
-- Use sentinel defaults like `""` when they already fit the domain.
-- Use a named object when the returned value is semantic domain data.
-- Keep tuples for local glue, iterator yields, and small helper-style returns.
+- Use range types for constrained public parameters and base types for stored fields.
+- Use a sentinel default only when that value has one unambiguous domain meaning.
+- Use a named object for semantic results; keep tuples for local glue and iterator yields.
+- Range checks run in debug and release builds, but not in danger mode or when disabled.

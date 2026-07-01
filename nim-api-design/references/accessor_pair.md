@@ -1,15 +1,14 @@
 # Accessor Pair Pattern
 
-Minimal example showing one read accessor, one mutable accessor, and one shared
-error helper.
+Pair `lent` and `var` accessors only when callers need both borrowed reads and unrestricted mutation.
 
 ```nim
 type
-  PackageMeta = object
-    version: string
-    tags: seq[string]
+  PackageMeta* = object
+    version*: string
+    tags*: seq[string]
 
-  PackageCatalog = object
+  PackageCatalog* = object
     ids: seq[string]
     entries: seq[PackageMeta]
 
@@ -37,10 +36,6 @@ proc tags*(catalog: var PackageCatalog; id: string): var seq[string]
 
 ## Key points
 
-- One shared `{.noinline, noreturn.}` helper defines the missing-item failure path.
-- Exported accessors make that stable failure path explicit with
-  `{.raises: [KeyError].}`.
-- Read accessors borrow with `lent`; mutable access is exposed only for the
-  `seq[string]` field that callers are expected to edit.
-- Accessors return directly from the owner field. No temp locals.
-- There is no `var` accessor for scalar fields.
+- Use one private `{.noinline, noreturn.}` helper and one public exception contract for missing items.
+- Return `lent` for reads and `var` only for values callers may freely edit; keep scalar fields read-only.
+- Return borrows directly from owner storage, without temporary locals.
