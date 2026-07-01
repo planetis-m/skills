@@ -59,13 +59,12 @@ proc nextLine(input: string, pos: var int): string =
 
 # --- Harness ---
 
-proc LLVMFuzzerTestOneInput(data: ptr UncheckedArray[byte], len: csize_t): cint {.
-    exportc, cdecl, raises: [].} =
+proc testOneInput(data: ptr UncheckedArray[byte], len: int): cint {.
+    exportc: "LLVMFuzzerTestOneInput", raises: [].} =
   result = 0
   if len == 0: return
-  let inputLen = int(len)
-  var input = newString(inputLen)
-  copyMem(addr input[0], data, inputLen)
+  var input = newString(len)
+  copyMem(addr input[0], data, len)
   try:
     parseFullRequestOriginal(input)
   except ValueError:
@@ -125,9 +124,7 @@ nim c --cc:clang --panics:on -d:noSignalHandler -d:useMalloc --noMain:on \
 ## Key patterns
 
 - **String extraction**: `newString` + `copyMem` converts fuzzer bytes to Nim string.
-- **Error triage**: Three-tier exception handling separates expected parse
-  failures from real bugs.
-- **`quit(70)` for Defect**: Non-zero exit signals a finding to libFuzzer.
+- **Error triage**: Catch only expected parse errors (`ValueError`); let Defects crash the process.
 - **Seeds for code paths**: Each seed exercises a different branch of the
   parser (GET, Content-Length POST, chunked POST).
 - **Size limits**: `localMaxBody` and `localMaxLine` in the code under test

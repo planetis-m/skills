@@ -13,10 +13,11 @@ Larger examples live in `references/`.
 
 ### Placement
 
+- `##` is a doc comment — `nim doc` picks it up. `#` is a regular comment and is ignored by docs.
 - Module docs go at the top of the file, before imports.
 - Proc/func/iterator/template/converter docs go immediately after the signature line, before the body.
 - Inside `type`, `const`, and `let` blocks, attach docs to the declaration line with trailing `##`.
-- For multi-line declaration docs, continue with aligned `##` lines under the declaration.
+- Multi-line docs continue with `##` on the following lines, aligned under the declaration.
 - Enum value and object field docs go on their declaration lines.
 - Do not put a standalone `##` line above a declaration inside a `type` or `const` block and expect it to attach.
 
@@ -40,7 +41,7 @@ Larger examples live in `references/`.
 1. Identify the exported API.
 2. Place each doc comment using the correct source layout.
 3. Run `nim doc path/to/module.nim`.
-4. Check source placement and rendered output.
+4. Verify attachment with `nim jsondoc path/to/module.nim` — every exported symbol should have a non-empty `description`.
 5. Fix the source comments. Never edit generated output.
 
 ## Common Mistakes

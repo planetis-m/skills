@@ -31,22 +31,6 @@ block parse_bad_input:
 
 `doAssert` raises `AssertionDefect` on failure. For catchable exceptions, `doAssertRaises` passes only when the requested exception type is raised; otherwise the test exits non-zero.
 
-### `doAssert` vs `assert`
-
-`doAssert` runs in all build modes. Plain `assert` is compiled out in `-d:danger`. Use `doAssert` in tests.
-
-### Use `doAssertRaises` for Expected Exceptions
-
-Use `doAssertRaises` for expected exceptions:
-
-```nim
-import std/assertions
-
-block parse_bad_input:
-  doAssertRaises ValueError:
-    discard parseThing("")
-```
-
 ### Project layout
 
 ```
@@ -126,9 +110,8 @@ Keep test files self-contained when practical. If setup is repeated, extract dom
 | `-d:danger`           | No              | Raising frame only       |
 
 - **Overflow checks:** Disabled in danger. Use `when defined(danger)` guards.
-- **Stack traces:** Release and danger show only the raising frame. Add `--lineTrace:on` to restore full traces.
+- **Stack traces:** Release and danger show only the raising frame. Add `--stackTrace:on` to restore full traces. Add `--lineTrace:on` for line numbers in those frames.
 - **`assert`:** Compiled out in danger. Use `doAssert`.
-- **Expected exceptions:** Use `doAssertRaises`.
 
 ## AddressSanitizer
 
