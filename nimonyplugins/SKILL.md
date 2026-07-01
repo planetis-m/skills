@@ -54,8 +54,8 @@ express the protocol.
 - `NifCursor` is a copyable, reference-counted, bounded read cursor.
 - `snapshot(tree)` borrows a non-empty builder. The cursor keeps its observed
   storage alive; later builder mutation detaches storage as needed.
-- Pass completed builders directly to `addTree` and `saveTree`; their `sink`
-  parameters handle ownership transfer.
+- `addTree` borrows its child builder, so the child remains usable afterward.
+  `saveTree` accepts its completed output as a `sink` parameter.
 - `SymId` and `TagId` are numeric handles local to shared plugin pools. Resolve
   names with `symText` and `tagText`; `$id` is not a text lookup.
 - Plugin inputs and builders use shared preseeded pools, so handles obtained
@@ -69,12 +69,15 @@ express the protocol.
   tags. There is no validated `createTree(kind, children)` overload.
 - Use `NoLineInfo` only for synthetic output; preserve `n.info` for derived
   output.
-- Use `addTree(dest, child)` for an entire final-use local builder.
+- Use `addTree(dest, child)` to append an entire child builder.
 - Use `addSubtree(dest, cursor)` to copy without advancing and
   `takeTree(dest, cursor)` to copy and advance.
 - Use `copyInto(dest, cursor):` to copy a node head while transforming all
   bounded children.
 - Use `bindSym` for hygienic definition-scope symbol references.
+- Use `genSym()` for locals introduced by a plugin. Pass the returned `SymId`
+  to both `addSymDef` and `addSymUse`; do not construct local symbol names or
+  handle `.unusedname` directives yourself.
 
 ### Traverse bounded cursors
 
@@ -116,7 +119,8 @@ express the protocol.
 4. Load input with `loadPluginInput`, `loadTypeDefinitions`, or `loadReplacer`.
 5. Use protocol helpers before traversing arguments, variables, or bodies.
 6. Preserve correct subtrees; synthesize only what changes.
-7. Return one complete output with `saveTree`, `saveReplacer`, or `errorTree`.
+7. Build one complete output. Return `errorTree` for invalid input, then write
+   the result with `saveTree` or `saveReplacer`.
 8. Compile plugin integration tests with Nimony. Host Nim may be used only for
    an outer test harness that launches `nimony`.
 
@@ -130,8 +134,9 @@ express the protocol.
 | Looking for `ParLe`, `ParRi`, or `StringLit` | Use `TagLit`, bounded `hasMore`, and `StrLit` |
 | Reading the first template child as argument 1 | It is the invoked name; use `callArgs` |
 | Reading type definitions with `paramStr(3)` | Use `loadTypeDefinitions()` |
-| Appending a builder with `add` | Use consuming `addTree` |
+| Appending a builder with `add` | Use `addTree` |
 | Comparing `$symId` or `$tagId` to names | Use `symText` or `tagText` |
+| Inventing names such as `tmp.0` for generated locals | Use one `genSym()` result for the definition and every use |
 | Returning only changed statements from module/type plugins | Return the full module |
 | Emitting inside `peek` | Output persists even though the source cursor rewinds |
 
@@ -142,3 +147,4 @@ express the protocol.
 - `references/for_loop_plugin.md` — expand an already typed loop body
 - `references/module_plugin.md` — selectively rewrite a complete typed module
 - `references/type_plugin.md` — validate a module using triggering type symbols
+- `references/generated_symbols.md` — introduce a collision-free local symbol

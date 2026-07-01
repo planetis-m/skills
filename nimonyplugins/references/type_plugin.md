@@ -61,7 +61,7 @@ else:
 
 ```nim
 # app.nim
-import std / [assertions, syncio]
+import std / assertions
 import stackonly
 
 proc main() =
@@ -69,7 +69,6 @@ proc main() =
   assert item.value == 42
 
 main()
-echo "TYPE: PASS"
 ```
 
 This use is rejected at the declaration:

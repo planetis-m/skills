@@ -1,6 +1,6 @@
 ---
 name: nim-api-design
-description: Design clear public Nim APIs for libraries and modules, including exported types, constructors, lookup functions, error contracts, and container-style interfaces. Use when creating or reviewing a Nim library API, designing an exported module surface, or deciding how callers should construct, access, and validate data.
+description: Design clear public Nim APIs for libraries and modules, including exported types, constructors, parameter ownership, lookup functions, error contracts, and container-style interfaces. Use when creating or reviewing a Nim library API, designing an exported module surface, or deciding how callers should construct, pass, access, and validate data.
 ---
 
 # Nim API Design
@@ -35,8 +35,13 @@ Reference examples live in `references/`.
 - Value types use `initX()` and return `T`.
 - Ref types use `newX()` and return `ref T`.
 - Use one `toX()` name for common conversions. Overload on input type.
-- Accept `openArray` for batch inputs when callers naturally have arrays, seqs, or literals.
+- Choose batch parameters by operation: `openArray[T]` for reads, `var openArray[T]` for fixed-length element mutation, and `var seq[T]` for resizing or replacement.
 - Keep the zero-argument path simple with sensible defaults.
+
+### Parameter ownership
+
+- Use `T` when the caller's variable stays unchanged, `var T` when the proc changes it, and `sink T` when the proc takes ownership. Use `lent T` only for borrowed returns.
+- Pass sink arguments normally. Nim moves proven last-use values and copies others. Use `ensureMove(x)` only to reject a copy at compile time.
 
 ### Lookup surface
 
@@ -48,7 +53,7 @@ Reference examples live in `references/`.
 ### Borrowed and mutable access
 
 - Use `lent T` for read accessors that return storage owned by the receiver.
-- Add `var T`, `mitems`, or `mpairs` only when caller mutation is part of the API.
+- Return `var T` only when callers may freely modify the value. If changes require validation or related updates, expose mutation procs instead.
 - Do not expose scalar `var` accessors such as `var int`, `var bool`, or enum fields from internal state.
 - In `lent` and `var` accessors, return directly from storage. Do not route through a temp local.
 
@@ -69,10 +74,10 @@ Reference examples live in `references/`.
    Use `initX`, `newX`, and `toX` in the stdlib style.
 4. Design the lookup surface.
    Provide one strict path for required data and one explicit safe path for optional data.
-5. Add borrowed and mutable access.
-   Use `lent` for reads into owned storage. Add mutable access only where the caller must edit stored data.
+5. Choose parameter modes and borrowed access.
+   Use `T` when the caller's variable stays unchanged, `var T` when the proc changes it, `sink T` when the proc takes ownership, and `lent T` to return a borrow. Use mutation procs when changes need validation or related updates.
 6. Verify the contract.
-   Compile normally. If you use `lent` or `var` accessors, verify the borrow compiles. If you use `func`, make sure the body stays pure. If you gate by Nim version, use `when` guards.
+   Compile public examples. Exercise each mutation, ownership, and failure path.
 
 ## Common Mistakes
 
@@ -83,7 +88,11 @@ Reference examples live in `references/`.
 | Weakening `Natural` or `Positive` to `int` and re-checking manually | It throws away a stronger type-level contract |
 | Returning a silent default for required data | It hides missing-data bugs |
 | Exporting scalar `var` accessors | It leaks mutable internal state |
+| Returning `var T` for controlled state | Callers can bypass validation and related updates |
 | Returning a `lent` or `var` result through a temp local | ORC rejects the borrow because the temp escapes |
+| Using `lent T` for an input parameter | `lent T` is a borrowed return type; the compiler rejects it in parameter position |
+| Assuming a sink call always moves the caller's variable | Nim copies the argument when it cannot prove last use |
+| Wrapping a routine sink argument in `ensureMove` | Sink already performs last-use analysis; use `ensureMove` only when the code must fail instead of copy |
 
 ## References
 
@@ -93,3 +102,4 @@ Reference examples live in `references/`.
 - `references/accessor_pair.md` — Minimal borrowed and mutable accessor pair with one shared error helper
 - `references/distinct_types.md` — Domain types with `distinct` and borrowed operations
 - `references/parameter_and_result_shapes.md` — Parameter defaults, options objects, and named result objects
+- `references/parameter_ownership.md` — `T`, `var T`, `sink T`, `lent T`, and explicit ownership transfer

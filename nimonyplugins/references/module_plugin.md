@@ -32,7 +32,6 @@ proc sideEffect(): int =
   1
 
 discard sideEffect()
-echo "MODULE: PASS"
 ```
 
 ## Key points

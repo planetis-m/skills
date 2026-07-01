@@ -39,7 +39,7 @@ saveTree transform(input)
 
 ```nim
 # app.nim
-import std / [assertions, syncio]
+import std / assertions
 import repeat
 
 var runs = 0
@@ -47,7 +47,6 @@ for _ in repeat(3):
   inc runs
 
 assert runs == 3
-echo "FOR_LOOP: PASS"
 ```
 
 ## Key points
