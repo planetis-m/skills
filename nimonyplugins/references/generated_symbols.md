@@ -14,13 +14,6 @@ import plugins
 
 proc transform(root: NifCursor): NifBuilder =
   var value = callArgs(root)
-  if not value.hasMore:
-    return errorTree("echoFresh expects one argument", root)
-  var extra = value
-  skip extra
-  if extra.hasMore:
-    return errorTree("echoFresh expects one argument", root)
-
   let info = value.info
   let local = genSym()
   result = createTree()

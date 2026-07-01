@@ -137,6 +137,7 @@ express the protocol.
 | Appending a builder with `add` | Use `addTree` |
 | Comparing `$symId` or `$tagId` to names | Use `symText` or `tagText` |
 | Inventing names such as `tmp.0` for generated locals | Use one `genSym()` result for the definition and every use |
+| Checking argument count in a template plugin | The compiler enforces arity against the signature before the plugin runs |
 | Returning only changed statements from module/type plugins | Return the full module |
 | Emitting inside `peek` | Output persists even though the source cursor rewinds |
 
