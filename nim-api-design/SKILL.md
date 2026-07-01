@@ -28,7 +28,7 @@ Reference examples live in `references/`.
 - Prefer range types for constrained public parameters. Use base types for stored fields.
 - Use `distinct` when two values share a base type but must not mix.
 - Use `func` for pure query operations when purity is part of the public contract.
-- Use `{.raises.}` only when it keeps the public exception surface clear and easy to maintain.
+- Use `{.raises: [].}` when a proc must not raise. Leave raising procs unannotated.
 
 ### Constructors and conversions
 

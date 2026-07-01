@@ -24,7 +24,7 @@ proc toWalkOptions*(extension = ".nim", relative = false, skipHidden = false,
     maxDepth: maxDepth
   )
 
-proc findFiles*(root: string; options = toWalkOptions()): SearchSummary {.raises: [ValueError].} =
+proc findFiles*(root: string; options = toWalkOptions()): SearchSummary =
   if root.len == 0:
     raise newException(ValueError, "root is empty")
 

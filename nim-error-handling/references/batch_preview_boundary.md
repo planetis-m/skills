@@ -1,8 +1,8 @@
-Batch-preview example showing a bool parse helper, one translation boundary, and an orchestrator catch boundary.
+# Batch Failure Boundary
+
+This example records processing failures per item but lets audit failure abort the batch.
 
 ```nim
-import std/[strutils]
-
 type
   PreviewItem = object
     path: string
@@ -35,19 +35,6 @@ proc fakeAuditWrite(auditPath: string; line: string) =
   if auditPath == "audit-fail":
     raise newException(OSError, "audit write failed")
 
-proc parseRetryLimit(s: string; value: var int): bool =
-  result = false
-  try:
-    let parsed = parseInt(s)
-    if parsed > 0:
-      value = parsed
-      result = true
-  except ValueError:
-    result = false
-
-proc loadPages(path: string): seq[string] =
-  fakeReadPages(path)
-
 proc buildPreviewPayload(pages: seq[string]; pageIndex: int): seq[byte] =
   if pageIndex >= pages.len:
     raise newException(ValueError, "page index out of bounds")
@@ -56,13 +43,10 @@ proc buildPreviewPayload(pages: seq[string]; pageIndex: int): seq[byte] =
     raise newException(IOError, "selected page was empty")
   result = @(page.toOpenArrayByte(0, page.high))
 
-proc publishPreview(payload: seq[byte]): string =
-  fakeUpload(payload)
-
 proc processOne(path: string; pageIndex: int): string =
-  let pages = loadPages(path)
+  let pages = fakeReadPages(path)
   let payload = buildPreviewPayload(pages, pageIndex)
-  result = publishPreview(payload)
+  result = fakeUpload(payload)
 
 proc writeAuditLine(auditPath: string; line: string) =
   try:
@@ -97,6 +81,8 @@ proc runBatch(paths: seq[string]; pageNo: Positive; auditPath: string): BatchSum
 ```
 
 ## Key points
+
 - `processOne` stays straight-line and lets failures propagate.
-- `writeAuditLine` is the one translation boundary because it adds local audit context.
-- `runBatch` is the place where exceptions become per-item output.
+- `runBatch` converts processing failures into ordered per-item outcomes.
+- `writeAuditLine` translates audit failure to `IOError` and adds the audit path.
+- If audit writing fails, the translated error escapes `runBatch`; the batch cannot safely report that item.

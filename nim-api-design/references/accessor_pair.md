@@ -22,20 +22,20 @@ proc findIndex(catalog: PackageCatalog; id: string): int {.inline.} =
   raiseAccessorError("unknown package id: " & id)
 
 proc meta*(catalog: PackageCatalog; id: string): lent PackageMeta
-    {.inline, raises: [KeyError].} =
+    {.inline.} =
   result = catalog.entries[findIndex(catalog, id)]
 
 proc tags*(catalog: PackageCatalog; id: string): lent seq[string]
-    {.inline, raises: [KeyError].} =
+    {.inline.} =
   result = catalog.entries[findIndex(catalog, id)].tags
 
 proc tags*(catalog: var PackageCatalog; id: string): var seq[string]
-    {.inline, raises: [KeyError].} =
+    {.inline.} =
   result = catalog.entries[findIndex(catalog, id)].tags
 ```
 
 ## Key points
 
-- Use one private `{.noinline, noreturn.}` helper and one public exception contract for missing items.
+- Use one private `{.noinline, noreturn.}` helper for missing items.
 - Return `lent` for reads and `var` only for values callers may freely edit; keep scalar fields read-only.
 - Return borrows directly from owner storage, without temporary locals.
