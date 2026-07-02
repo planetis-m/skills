@@ -1,45 +1,58 @@
-Use `--expandArc` to explain an ownership operation, then apply `move` only
-when the source is intentionally at last use.
+Use `--expandArc` to find a copy when ownership should transfer.
+
+This example transfers tuple elements between arrays. Each tuple contains a
+`string` and a `seq[byte]`, so its copy hook is lifted from both fields.
 
 ```nim
 type
-  Container = object
-    items: seq[string]
+  FileEntry = tuple[
+    path: string,
+    data: seq[byte]]
 
-proc takeFirstCopy(container: var Container): string =
-  result = container.items[0]
-  container.items.delete 0
+  FileEntries = array[3, FileEntry]
 
-proc takeFirstMove(container: var Container): string =
-  result = move(container.items[0])
-  container.items.delete 0
+proc drainByCopy(source: var FileEntries; dest: var FileEntries) =
+  for i in 0..high(dest):
+    dest[i] = source[i]
+    source[i] = default(FileEntry)
 
-var copied = Container(items: @["alpha", "beta"])
-doAssert copied.takeFirstCopy() == "alpha"
-doAssert copied.items == @["beta"]
+proc drainByMove(source: var FileEntries; dest: var FileEntries) =
+  for i in 0..high(dest):
+    dest[i] = move(source[i])
 
-var moved = Container(items: @["gamma", "delta"])
-doAssert moved.takeFirstMove() == "gamma"
-doAssert moved.items == @["delta"]
+proc sampleEntries(): FileEntries =
+  result = [
+    (path: "one.txt", data: @[1'u8, 2]),
+    (path: "two.txt", data: @[3'u8, 4]),
+    (path: "three.txt", data: @[5'u8, 6])]
+
+proc main =
+  var copySource = sampleEntries()
+  var copied: FileEntries
+  copySource.drainByCopy(copied)
+  doAssert copied == sampleEntries()
+  doAssert copySource == default(FileEntries)
+
+  var moveSource = sampleEntries()
+  var moved: FileEntries
+  moveSource.drainByMove(moved)
+  doAssert moved == copied
+  doAssert moveSource == default(FileEntries)
+
+main()
 ```
 
 Inspect both reachable procedures:
 
 ```bash
-nim c --expandArc:takeFirstCopy --expandArc:takeFirstMove example.nim
+nim c --expandArc:drainByCopy --expandArc:drainByMove example.nim
 ```
 
-Look for an injected `=copy` in `takeFirstCopy` and `move` in
-`takeFirstMove`. Exact expansion text can change with compiler versions and
-surrounding code, so compare ownership operations rather than matching a whole
-listing.
+`drainByCopy` contains `=copy` followed by clearing the source. `drainByMove`
+contains `=sink(dest[i], move(source[i]))`; moving already leaves the source
+element in its default state.
 
-## Key points
-
-- `move` is destructive: use it only when the source value is intentionally
-  discarded or reinitialized.
-- Keep the operation under test reachable from the program entry point.
-- Inspect under the memory manager used by the target project.
-- Removing a visible copy is an optimization hypothesis, not proof of a
-  meaningful speedup. Measure when performance matters.
-- Re-run behavior tests after changing ownership operations.
+Use `move` only when the operation transfers ownership and the source element
+must not retain its value. Re-run the behavior checks under the project's
+memory manager, then measure before treating the removed copy as a useful
+optimization.
