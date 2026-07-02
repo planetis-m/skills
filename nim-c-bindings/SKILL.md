@@ -16,12 +16,22 @@ Rules for writing portable Nim-to-C bindings and cross-platform CI/release workf
 - Use `{.bycopy.}` on structs that Nim must pass by value to C.
 - Declare the C header in the binding when the compiler needs the C definitions for compilation, for example `header: "foo.h"`.
 - Use `{.push callconv: cdecl, header: "foo.h".}` blocks when many declarations share the same convention and header.
+- Match C storage with Nim's C-compatible types such as `cint`, `cuint`,
+  `clong`, `culong`, `clonglong`, `csize_t`, `cfloat`, `cdouble`, `cstring`,
+  and pointer types.
+- Preserve the complete field order for concrete structs passed or returned by
+  value.
+- When the requested deliverable is a raw binding, import C symbols directly.
+  Put ergonomic aliases and conversions in a separate wrapper layer.
 
 ### Linking
 
 - **System libraries**: link with `-l<name>` only. Do not hardcode `-L` paths — the OS toolchain already knows where system libs live.
 - **Local/third-party libraries**: add both `-L<dir>` and `-l<name>` (or `.lib`/`.dll.lib` paths on Windows MSVC).
 - Use repository-relative paths for vendored dependencies, for example `third_party/libfoo`, to keep builds hermetic.
+- Distinguish linker-resolved imports from Nim runtime `dynlib` imports.
+  `header` supplies declarations for generated C; a runtime-only `dynlib` proc
+  should not also use `header`.
 
 ### Runtime Library Resolution
 
@@ -50,15 +60,26 @@ Rules for writing portable Nim-to-C bindings and cross-platform CI/release workf
 - Align the local toolchain with CI (e.g., MSVC + vcpkg `x64-windows-release` with `--cc:vcc`).
 - Use the reference workflows as starting points — `references/ci.yml` for validation, `references/release.yml` for tagged releases.
 
+### Verification
+
+- Compile against the real header and call the real C implementation.
+- Exercise concrete structs passed and returned by value. Compare Nim layout
+  with C `sizeof` and `offsetof` probes when layout is in doubt.
+- Test bundled shared libraries after copying the executable and library into
+  a clean directory.
+- For `dynlib`, verify runtime loading without also linking that library.
+
 ## Workflow
 
 1. **Identify the C API.** Determine calling convention, opaque vs value types, and ownership.
 2. **Write bindings.** Use `importc`, correct calling convention, `incompleteStruct` for opaque types, `bycopy` for value types. Add `header` pragma.
 3. **Set up linking.** System libs: `-l` only. Local libs: `-L` + `-l` with repo-relative paths. Windows: explicit `.lib` paths.
 4. **Handle runtime.** Colocate local shared libs. For system-installed libs, rely on the normal loader search path. Add rpath `$ORIGIN` on Linux only for colocated local libs.
-5. **Add CI.** Copy `references/ci.yml`, adapt placeholders (`<package>`, `<src/main.nim>`, dependency lists).
-6. **Add release.** Copy `references/release.yml`, adapt placeholders, configure draft releases.
-7. **Test locally, then push.** Verify the build works locally with the same flags CI uses.
+5. **Verify the ABI.** Run a real C round trip for the types and calls used by
+   the binding.
+6. **Add CI.** Copy `references/ci.yml`, adapt placeholders (`<package>`, `<src/main.nim>`, dependency lists).
+7. **Add release.** Copy `references/release.yml`, adapt placeholders, configure draft releases.
+8. **Test locally, then push.** Verify the build works locally with the same flags CI uses.
 
 ## Common Mistakes
 
@@ -70,8 +91,11 @@ Rules for writing portable Nim-to-C bindings and cross-platform CI/release workf
 | Relying on env vars for vendored shared libs | Fragile across machines; colocate instead |
 | Build-tree-only rpaths | Breaks when the binary moves; use `$ORIGIN` for colocated libs |
 | Guessing Windows dependency paths | Non-deterministic; use vcpkg with known install roots |
+| Compiling C sources into the executable when the task requires an existing shared library | Bypasses shared-library link and relocation behavior |
+| Adding Nim-bodied wrappers to a requested raw binding surface | Hides whether the C API was imported directly and changes the requested layer |
 
 ## References
 
+- `references/raw_binding.md` — Complete opaque-handle and by-value struct binding
 - `references/ci.yml` — Cross-platform CI workflow (Linux, macOS, Windows) with Nim, Atlas, and vcpkg
 - `references/release.yml` — Tagged release workflow producing per-platform archives and a draft GitHub Release

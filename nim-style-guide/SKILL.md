@@ -5,7 +5,7 @@ description: Write clear, consistent Nim code in a simple stdlib-aligned style, 
 
 # Preamble
 
-Use this skill to keep Nim code simple, consistent, and easy to scan.
+Prefer concise, structured code that the compiler and reader can reason about.
 Larger examples live under `references/`.
 
 # Rules
@@ -13,21 +13,37 @@ Larger examples live under `references/`.
 ## Formatting
 
 - Indent blocks with 2 spaces and use spaces instead of tab characters.
-- Keep lines at or below 80 characters when practical.
+- Keep lines at or below 80 characters.
 - Use ordinary spacing instead of aligning columns by hand.
 - Write range operators compactly: `a..b`, `a..<b`, and `a..^b`. Add spaces
   when an operand contains an operator, as in `a .. -3`.
 - Indent wrapped declarations, calls, and conditions one extra level.
+- Start multiline triple-quoted strings on the next line.
 
 ## Imports And Naming
 
-- Prefer `std/...` imports for stdlib modules.
+- Use `std/...` imports for stdlib modules.
 - Group broad stdlib imports with `import std/[a, b, c]`.
 - Use `from std/foo import bar, baz` when you only need a small API slice.
 - Types use `PascalCase`.
 - Procs, funcs, iterators, templates, vars, and fields use `camelCase`.
+- Constants may use `camelCase` or `PascalCase`.
+- Use `ALL_UPPERCASE` only when preserving names from a C or C++ wrapper.
 - Use normal word casing such as `parseUrl` and `httpStatus`.
+- Give the most-used representation the base type name. Suffix the others with
+  `Obj`, `Ref`, or `Ptr`.
+- Suffix exception types with `Error` or `Defect`.
 - For non-pure enums, prefix values such as `pcFile`. For pure enums, use `PascalCase`.
+- Prefix mutable views with `m`, as in `mitems` and `mpairs`.
+- Pair in-place and copied transforms as `reverse` and `reversed`. If the copy
+  name already exists, suffix the in-place form with `In`, as in `replaceIn`.
+- Name domain predicates subject-first, as in `fileExists`, not `existsFile`.
+- Use established stdlib names when behavior matches: `initX`, `newX`, `find`,
+  `contains`, `add`, `cmp`, `len`, `cap`, `items`, `pairs`, `incl`, and `excl`.
+- Use `find` for a position and `contains` for a `bool`.
+- Name a cheap, side-effect-free field getter `foo`. Use `getFoo` when the
+  operation has side effects or is not O(1).
+- Pair `foo` with `foo=` and `getFoo` with `setFoo`.
 
 ## Proc, Func, Template, Macro
 
@@ -79,14 +95,11 @@ lines from the body.
 
 ## Control Flow
 
-- Prefer straightforward `if/elif/else` and explicit loop conditions.
-- Tiny predicate or search helpers may use early `return`.
-- In stateful or multi-step procs, keep one clear normal path and use `result = ...` when that reads more clearly.
-- Use `return` when its control-flow effect is required, such as a guard or
-  found value. Prefer the implicit `result` for the normal path.
-- Avoid `continue`. Express the condition as a structured branch so the
-  invariant remains visible to readers and compiler analysis. Use `continue`
-  when restructuring makes the loop less clear.
+- Use structured control flow.
+- Build the normal return value in `result`.
+- When a loop finds the return value, return it directly instead of using a
+  flag.
+- Do not use `continue`. Put the remaining loop body inside a condition.
 
 # Workflow
 
@@ -97,7 +110,7 @@ lines from the body.
 2. Write imports and names.
    Use `std/...` imports, narrow imports when practical, and keep names in normal Nim casing.
 3. Shape the control flow.
-   Keep one obvious normal path. Use guard returns only when they make the code simpler.
+   Use structured control flow. Return directly when a loop finds its result.
 4. Clean up locals and constructors.
    Use `let` by default, keep locals near first use, keep reusable helpers at module scope, and let constructors keep declaration defaults unless you are overriding them.
 5. Remove noise.
@@ -113,7 +126,7 @@ lines from the body.
 | Writing one argument per line by default | It adds vertical noise without adding structure. |
 | Using `var` for values that never mutate | It hides which locals actually change. |
 | Turning every branch into an early `return` in a multi-step proc | It makes the normal path harder to scan. |
-| Using `continue` for the ordinary loop path | A structured branch exposes the body's invariant to readers and compiler analysis. |
+| Using `continue` | A structured branch keeps the loop invariant visible. |
 | Restating every object field in a constructor | It adds noise and can hide which fields are intentionally overridden. |
 | Assigning fields into a zero-initialized `result` when the type declares field defaults | Initialize with `TypeName()` first, or use an object constructor, so declared defaults are applied. |
 

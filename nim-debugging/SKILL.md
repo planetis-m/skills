@@ -128,8 +128,7 @@ exit distinguishes detected errors in automated checks.
 
 ## Debug symbols and native debuggers
 
-- `-g` and `--debugger:native` enable native debug information and line
-  directives.
+- `-g` and `--debugger:native` enable native debug information and line directives.
 - This project does not use GDB: Nim name mangling and generated C make
   variable inspection slower and less reliable than stack traces, focused
   inspection, ASan, Valgrind, and compiler expansion.
@@ -163,8 +162,6 @@ exit distinguishes detected errors in automated checks.
 
 # References
 
-- `references/stack_trace_diagnosis.md` — trace a failure to the first invalid
-  value
+- `references/stack_trace_diagnosis.md` — trace a failure to the first invalid value
 - `references/memory_sanitizers.md` — complete ASan and Valgrind commands
-- `references/arc_optimization.md` — interpret ownership expansion and apply
-  `move` safely
+- `references/arc_optimization.md` — interpret ownership expansion and apply `move` safely

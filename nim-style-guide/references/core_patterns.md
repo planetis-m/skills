@@ -1,4 +1,4 @@
-A complete release-note renderer showing the guide's default formatting,
+A release-note renderer showing the guide's default formatting,
 callable, local-variable, control-flow, and constructor choices.
 
 ```nim
@@ -13,22 +13,26 @@ type
     heading: string = "Changes"
     includeUntitled: bool
 
-func normalizedTitle(title: string): string =
-  title.strip.toLowerAscii
+func find(notes: openArray[ReleaseNote]; title: string): int =
+  result = -1
+  for i, note in notes:
+    if note.title == title:
+      return i
 
 func formatNote(number: int; title, details: string): string =
-  result = $number & ". " & title
+  result = $number & "."
+  if title.len > 0:
+    result.add " " & title
   if details.len > 0:
     result.add " — " & details
 
 proc renderNotes(notes: openArray[ReleaseNote];
     options = RenderOptions()): seq[string] =
   result.add options.heading
-  for idx in 0..<notes.len:
-    let note = notes[idx]
-    let title = normalizedTitle(note.title)
+  for i, note in notes:
+    let title = note.title.strip
     if title.len > 0 or options.includeUntitled:
-      result.add formatNote(idx + 1, title,
+      result.add formatNote(i + 1, title,
         details = note.details.strip)
 
 let notes = [
@@ -37,28 +41,21 @@ let notes = [
   ReleaseNote(title: "Fixed Cache", details: "")
 ]
 
+doAssert notes.find("Fixed Cache") == 2
+doAssert notes.find("removed") == -1
+
 doAssert renderNotes(notes) == @[
   "Changes",
-  "1. added search — new index",
-  "3. fixed cache"
+  "1. Added Search — new index",
+  "3. Fixed Cache"
 ]
 
 let allNotes = renderNotes(notes,
   RenderOptions(heading: "All changes", includeUntitled: true))
 doAssert allNotes == @[
   "All changes",
-  "1. added search — new index",
-  "2.  — internal",
-  "3. fixed cache"
+  "1. Added Search — new index",
+  "2. — internal",
+  "3. Fixed Cache"
 ]
 ```
-
-## Key points
-
-- Imports use the `std/` prefix and identifiers follow ordinary Nim casing.
-- Pure transformations are `func`; the accumulating operation is a `proc`.
-- Stable locals use `let`, while the implicit `result` carries mutable output.
-- The loop keeps its normal path structured without `continue`.
-- Range operators are compact and wrapped calls use continued indentation.
-- The default constructor omits fields whose declaration defaults should
-  apply.

@@ -22,22 +22,21 @@ proc `=destroy`*(h: Handle) =
 proc `=wasMoved`*(h: var Handle) =
   h.raw = nil
 
-proc `=sink`*(dest: var Handle; src: Handle) =
-  `=destroy`(dest)
-  dest.raw = src.raw
-
+proc `=sink`*(dest: var Handle; src: Handle) {.error.}
 proc `=copy`*(dest: var Handle; src: Handle) {.error.}
 proc `=dup`*(src: Handle): Handle {.error.}
 
 proc initHandle*(width, height: int): Handle =
-  result.raw = libCreate(cint width, cint height)
-  if result.raw == nil:
+  let raw = libCreate(cint width, cint height)
+  if raw == nil:
     raise newException(ValueError, "Failed to create handle")
+  Handle(raw: raw)
 ```
 
 ## Key points
 
 - `{.error.}` on `=copy`/`=dup` prevents accidental double-free at compile time.
-- Use `ensureMove()` to transfer ownership between variables.
+- `{.error.}` on `=sink` prevents ownership transfer after construction.
+- Use `ensureMove()` to initialize a new owner from an existing variable.
 - `=wasMoved` must nil out the raw pointer so `=destroy` is a no-op on moved-from objects.
 - Raise immediately on nil from the C create function.

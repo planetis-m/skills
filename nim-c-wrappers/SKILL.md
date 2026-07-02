@@ -19,7 +19,7 @@ This skill covers the two-layer pattern for wrapping C libraries in Nim: a raw F
 ### Raw FFI Layer
 
 - Use `importc` with `cdecl` (or `stdcall` if the library requires it). Prefer `{.push callconv: cdecl, header: "foo.h".}` blocks for shared conventions.
-- Use `{.header.}` for static linking, `{.dynlib.}` for dynamic linking. Guard library names with `when defined(windows):` etc.
+- `header` declares linker-resolved imports; `dynlib` loads symbols at runtime. Do not combine them on one proc. Guard library names with `when defined(windows):` etc.
 - **Never reorder struct fields.** Use `object` in C field order. Add `packed` only if C headers specify packing.
 - Use `incompleteStruct` and list only needed fields to reduce ABI risk.
 - For C enums, use `distinct` integer types + `const` values. Do not use Nim `enum` in raw bindings. Find actual enum values in C headers—do not guess.
@@ -58,7 +58,7 @@ Struct types: `object` in C order. Fixed arrays: `array[N, T]`. Pointer+length: 
 
 ### Ergonomic Layer
 
-- For **move-only** resources: implement `=destroy`, `=wasMoved`, `=sink`; mark `=copy` and `=dup` with `{.error.}`. Use `ensureMove()` for ownership transfer.
+- For **move-only** resources: implement `=destroy` and `=wasMoved`; mark `=copy`, `=dup`, and `=sink` with `{.error.}`. Use `ensureMove()` for ownership transfer.
 - For **reference-counted** resources: use a `ptr int` counter. `=copy`/`=dup` increment, `=destroy` decrements and frees at zero. Use field-by-field assignment in `=dup`, not `result = src`.
 - In `=destroy`, explicitly call `=destroy` on owned nested GC-managed fields (string, seq) after releasing C resources.
 - Define ownership hooks in the **same module** as the type. Cross-module hook definitions are a compile error.

@@ -41,7 +41,7 @@ Larger examples live in `references/`.
 1. Identify the exported API.
 2. Place each doc comment using the correct source layout.
 3. Run `nim doc path/to/module.nim`.
-4. Verify attachment with `nim jsondoc path/to/module.nim` — every exported symbol should have a non-empty `description`.
+4. Check source placement and rendered output.
 5. Fix the source comments. Never edit generated output.
 
 ## Common Mistakes

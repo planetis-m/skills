@@ -24,7 +24,7 @@ description: Design clear Nim error-handling flows; when to raise exceptions vs 
 ### Choose Exception Types
 
 - Raise an existing specific type such as `ValueError`, `IOError`, or `OSError` when it fits.
-- Separate `except` branches when handling differs. Group exception types when handling is identical.
+- Separate `except` branches when handling differs. Group exception types when handling is identical. Put more specific types first — Nim dispatches first-match, so a parent before a child makes the child branch unreachable with no warning.
 - Catch `CatchableError` only when the boundary handles every recoverable error. Do not catch bare `Exception`.
 - Add a custom exception only when callers handle it differently. Derive it from the closest existing `CatchableError` subtype.
 - Derive from `Defect` only for programming bugs that callers should not recover from.
@@ -39,6 +39,20 @@ description: Design clear Nim error-handling flows; when to raise exceptions vs 
 
 - Use `try/finally` for cleanup.
 - Use `{.raises: [].}` when a proc must not raise. Leave raising procs unannotated.
+
+## Workflow
+
+1. **Choose the failure channel** for each failure point: raise, return `bool`, return `Option[T]`, or structured per-item outcome.
+2. **Pick the exception type.** Prefer existing stdlib types; add a custom type only when callers handle it differently.
+3. **Place catch boundaries** only where the handler can recover, translate, or record the failure.
+4. **Enforce contracts.** Add `{.raises: [].}` to procs that must not raise.
+
+## Common Mistakes
+
+| Mistake | Why it is wrong |
+|---------|-----------------|
+| Parent `except` before child | Nim dispatches first-match, so the child branch is unreachable. Put specific types first. |
+| Using `except Exception` to catch all errors | It catches `Defect` too, masking programming bugs as recoverable. Catch `CatchableError` instead. |
 
 ## References
 
