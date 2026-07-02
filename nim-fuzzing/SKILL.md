@@ -21,14 +21,14 @@ Worked examples live in `references/`.
 
 ## Harness structure: the two required procs
 
-Every Nim fuzz target needs exactly two exported procs with these signatures:
+Every Nim fuzz target needs these two exported procs:
 
 ```nim
-proc initialize(): cint {.exportc: "LLVMFuzzerInitialize".} =
+proc initialize(): cint {.cdecl, exportc: "LLVMFuzzerInitialize".} =
   {.emit: "N_CDECL(void, NimMain)(void); NimMain();".}
 
 proc testOneInput(data: ptr UncheckedArray[byte], len: int): cint {.
-    exportc: "LLVMFuzzerTestOneInput", raises: [].} =
+    cdecl, exportc: "LLVMFuzzerTestOneInput", raises: [].} =
   result = 0
   # exercise code under test with data[0..<len]
 ```
@@ -43,18 +43,18 @@ which is treated as a finding.
 ## Minimum working example
 
 ```nim
-proc fuzzMe(data: openarray[byte]): bool =
+proc fuzzMe(data: openArray[byte]): bool =
   result = data.len >= 3 and
     data[0].char == 'F' and
     data[1].char == 'U' and
     data[2].char == 'Z' and
-    data[3].char == 'Z' # out-of-bounds: FUZZ is only 4 bytes
+    data[3].char == 'Z' # out-of-bounds when data.len == 3
 
-proc initialize(): cint {.exportc: "LLVMFuzzerInitialize".} =
+proc initialize(): cint {.cdecl, exportc: "LLVMFuzzerInitialize".} =
   {.emit: "N_CDECL(void, NimMain)(void); NimMain();".}
 
 proc testOneInput(data: ptr UncheckedArray[byte], len: int): cint {.
-    exportc: "LLVMFuzzerTestOneInput", raises: [].} =
+    cdecl, exportc: "LLVMFuzzerTestOneInput", raises: [].} =
   result = 0
   discard fuzzMe(data.toOpenArray(0, len-1))
 ```
@@ -66,12 +66,12 @@ How to convert `ptr UncheckedArray[byte]` + `len` to Nim types:
 | Target format          | Extraction code |
 |------------------------|-----------------|
 | raw byte buffer        | `data.toOpenArray(0, len-1)` |
-| string                 | `var s = newString(len); copyMem(addr s[0], data, len)` |
-| seq[T] via copyMem     | `let n = len div sizeof(T); var s = newSeq[T](n); copyMem(addr s[0], data, n * sizeof(T))` |
-| interpret as C struct  | `if len < sizeof(MyType): return 0; let p = cast[ptr MyType](data)` |
+| string                 | `var s = newString(len); if len > 0: copyMem(addr s[0], data, len)` |
+| seq[T] via copyMem     | `let n = len div sizeof(T); var s = newSeq[T](n); if n > 0: copyMem(addr s[0], data, n * sizeof(T))` |
+| plain fixed-layout type | `if len >= sizeof(T): var value: T; copyMem(addr value, data, sizeof(T))` |
 
 For the copyMem patterns, the fuzzer-provided buffer is a flat byte array.
-Convert to typed Nim data after bounds-checking `len`.
+Check the length before taking element addresses or copying bytes.
 
 ## Error handling in the harness
 
@@ -88,15 +88,15 @@ catch `Defect`.
 
 ```nim
 proc testOneInput(data: ptr UncheckedArray[byte], len: int): cint {.
-    exportc: "LLVMFuzzerTestOneInput", raises: [].} =
+    cdecl, exportc: "LLVMFuzzerTestOneInput", raises: [].} =
   result = 0
-  if len == 0: return
-  var input = newString(len)
-  copyMem(addr input[0], data, len)
-  try:
-    parseMyFormat(input)
-  except ValueError:
-    discard          # expected rejection
+  if len > 0:
+    var input = newString(len)
+    copyMem(addr input[0], data, len)
+    try:
+      parseMyFormat(input)
+    except ValueError:
+      discard          # expected rejection
   # Defects crash the process — no catch needed with --panics:on
 ```
 
@@ -164,8 +164,8 @@ Useful flags (passed as CLI args to the compiled binary, not to `nim c`):
 
 | Flag              | Effect |
 |-------------------|--------|
-| `-fork=N`         | Run N parallel workers. Use 1 for debugging, CPU count for throughput. |
-| `-ignore_crashes=1` | Don't stop on first crash; keep fuzzing for more findings. |
+| `-fork=N`         | Run N worker processes. Omit while debugging. |
+| `-ignore_crashes=1` | In fork mode, keep fuzzing after a crash. |
 | `-max_len=N`      | Cap input size at N bytes. |
 | `-runs=N`         | Execute exactly N runs then exit. Use for CI/regression. |
 | `-close_fd_mask=1` | Close stdout; useful when running many workers. |
@@ -219,7 +219,8 @@ domain level.
 
 ```nim
 proc customMutator(data: ptr UncheckedArray[byte], len, maxLen: int,
-    seed: int64): int {.exportc: "LLVMFuzzerCustomMutator", raises: [].}
+    seed: int64): int {.
+    cdecl, exportc: "LLVMFuzzerCustomMutator", raises: [].}
 ```
 
 Called by libFuzzer to mutate `data` in-place. Must:
@@ -231,13 +232,17 @@ Called by libFuzzer to mutate `data` in-place. Must:
 Use the `seed` for deterministic randomness. On failure, return the original
 `len`.
 
+Defining `customMutator` replaces libFuzzer's built-in mutations. Include
+operations that change, add, and remove data.
+
 ### customCrossOver signature
 
 ```nim
 proc customCrossOver(data1: ptr UncheckedArray[byte], len1: int,
     data2: ptr UncheckedArray[byte], len2: int,
     res: ptr UncheckedArray[byte], maxResLen: int,
-    seed: int64): int {.exportc: "LLVMFuzzerCustomCrossOver", raises: [].}
+    seed: int64): int {.
+    cdecl, exportc: "LLVMFuzzerCustomCrossOver", raises: [].}
 ```
 
 Combines two inputs into `res`. Same constraints as customMutator.
@@ -246,7 +251,7 @@ Combines two inputs into `res`. Same constraints as customMutator.
 
 Add a custom mutator when:
 - The format has a clear structural boundary (fields, chunks, typed elements)
-- Raw byte mutation produces >90% invalid inputs
+- Raw byte mutation mostly produces invalid inputs
 - Coverage stalls despite a good seed corpus
 
 Start without one. Add only when the fuzzer fails to make progress.
@@ -298,9 +303,10 @@ See `references/structure_aware_fuzzing.md` for a worked example.
 Build with Clang source-based coverage:
 
 ```bash
-nim c --cc:clang \
-  --passC:"-fprofile-instr-generate -fcoverage-mapping" \
-  --passL:"-fprofile-instr-generate -fcoverage-mapping" \
+nim c --cc:clang --panics:on --noMain:on \
+  -d:noSignalHandler -d:useMalloc \
+  --passC:"-fsanitize=fuzzer -fprofile-instr-generate -fcoverage-mapping" \
+  --passL:"-fsanitize=fuzzer -fprofile-instr-generate -fcoverage-mapping" \
   my_fuzzer.nim
 
 LLVM_PROFILE_FILE="fuzz.profraw" ./my_fuzzer -runs=10000 corpus/
@@ -350,7 +356,7 @@ llvm-cov show ./my_fuzzer -instr-profile=fuzz.profdata --format=html \
 | Running ASan without `-d:useMalloc` | Nim's default allocator is not intercepted. ASan misses heap bugs. |
 | Running ASan without `-d:noSignalHandler` | Nim's signal handler masks crashes before ASan reports. |
 | Using `--passC` without `--passL` for sanitizers | The sanitizer runtime must be linked. Both flags are required. |
-| Compiling without `--panics:on` | Without panics, you need manual `except Defect: quit(70)` blocks. Panics simplify the harness: any Defect automatically crashes the process. |
+| Compiling without `--panics:on` | Defects may be caught and masked. With panics enabled, any Defect crashes the process. |
 | Using invalid seeds | The fuzzer wastes cycles re-discovering valid structure before finding interesting mutations. |
 | Writing a custom mutator prematurely | libFuzzer's built-in mutators handle many formats well. Add custom mutators only after coverage stalls. |
 | Not bounding input size with `-max_len` | Unbounded inputs can cause memory exhaustion or slow runs. |
@@ -359,5 +365,5 @@ llvm-cov show ./my_fuzzer -instr-profile=fuzz.profdata --format=html \
 # References
 
 - `references/simple_byte_target.md` — Minimum working fuzz target for raw bytes
-- `references/structure_aware_fuzzing.md` — Custom mutator and crossover for typed data
-- `references/protocol_fuzzer.md` — Full HTTP request parser harness with error triage
+- `references/structure_aware_fuzzing.md` — Custom mutator for length-prefixed frames
+- `references/protocol_fuzzer.md` — HTTP parser harness excerpt with error triage

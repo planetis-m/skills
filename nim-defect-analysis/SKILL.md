@@ -10,8 +10,6 @@ every finding as a hypothesis until a static trace and, where practical, a small
 reproducer support it. Prefer fewer, well-evidenced findings over broad
 speculation.
 
-No external reference files are required; the workflow is self-contained.
-
 # Rules
 
 ## Scope The Review
@@ -50,28 +48,29 @@ Record only high-value context:
 
 ## Classify Conservatively
 
-|| Class | Use when |
+| Class | Use when |
 |---|---|
 | `CONFIRMED` | A reproducer, sanitizer report, fuzz artifact, or integration test demonstrates the failure and root cause. |
 | `LIKELY` | Complete static trace shows externally-controlled input reaches a missing guard, but dynamic confirmation is not completed. |
-| `LOW` | Reachability or impact depends on uncommon configuration, timing, deployment assumptions, or unclear caller behavior. |
+| `LOW` | The static trace, external control, or failure conditions remain incomplete. |
 | `FALSE_POSITIVE` | A guard, type constraint, catch boundary, limit, or unreachable path blocks the issue. |
 | `NON_DEFECT` | The behavior is a spec mismatch or design choice without credible reliability or robustness impact. |
 
 Never mark a finding `CONFIRMED` from source reasoning alone.
+Classification describes evidence, not severity. Assess impact separately.
 
 ## Score With Coarse Confidence
 
 Do not multiply pseudo-probabilities.
 
-|| Score | Meaning |
-|---:|---|
-| 0.95 | Confirmed with reproducer or sanitizer/fuzzer artifact and root-cause trace. |
-| 0.80 | Confirmed by deterministic integration test; failure constraints are understood. |
-| 0.60 | Likely: complete static trace, clear external-input control, no dynamic confirmation yet. |
-| 0.40 | Plausible: partial trace or deployment-dependent failure conditions. |
-| 0.20 | Weak: speculative, unclear reachability, or low impact. |
-| 0.00 | False positive or non-defect behavior. |
+| Score | Class | Evidence |
+|---:|---|---|
+| 0.95 | `CONFIRMED` | Reproducer, sanitizer, or fuzz artifact with a root-cause trace. |
+| 0.80 | `CONFIRMED` | Deterministic integration test with understood failure conditions. |
+| 0.60 | `LIKELY` | Complete static trace without dynamic confirmation. |
+| 0.40 | `LOW` | Partial trace or deployment-dependent failure conditions. |
+| 0.20 | `LOW` | Speculative path or unclear external control. |
+| 0.00 | `FALSE_POSITIVE` or `NON_DEFECT` | The path is blocked or has no reliability impact. |
 
 If two adjacent scores fit, choose the lower score and state the missing
 evidence.
@@ -84,7 +83,8 @@ Before reporting, check:
 - reachability under the project build flags and `when defined(...)` branches
 - size limits, timeouts, auth checks, enum/range types, and parser guards
 - parser consumed-length semantics and whether callers check full consumption
-- whether the code catches the actual exception type or only `CatchableError`
+- whether the failure is a `CatchableError` or `Defect` and whether the
+  boundary catches it
 - whether `-d:danger` changes overflow or assertion behavior
 - async cancellation, reentrancy, and shared-state effects
 - FFI pointer lifetimes, nullability, struct layout, calling convention, and string ownership
@@ -124,17 +124,24 @@ stack trace, sanitizer report, or saved artifact.
    missing, downgrade before dynamic confirmation.
 5. **Attempt one minimal reproducer.** Prefer direct calls before integration
    tests. Use `doAssert`; do not rely on `assert`. Keep it bounded: one small
-   repro file, the shortest failing input, and at most two compile/fix cycles.
-6. **Run relevant modes.** Start with:
+   repro file, the shortest failing input, and at most two compile attempts.
+6. **Run only relevant modes.** Always start with the default build:
 
    ```bash
    nim c -r repro.nim
-   nim c --panics:on --mm:arc -r repro.nim
-   nim c -d:release --stackTrace:on -r repro.nim
-   nim c -d:danger --stackTrace:on -r repro.nim
    ```
 
-   Skip irrelevant modes, but say why.
+   Use `--panics:on` for `Defect` termination, release and danger for
+   assertion or overflow behavior, and ARC for ownership behavior:
+
+   ```bash
+   nim c --panics:on -r repro.nim
+   nim c -d:release --stackTrace:on -r repro.nim
+   nim c -d:danger --stackTrace:on -r repro.nim
+   nim c --mm:arc -r repro.nim
+   ```
+
+   State why each additional mode is relevant.
 7. **Use sanitizers only for unsafe memory, FFI, or manual allocation.**
 
    ```bash
@@ -144,6 +151,9 @@ stack trace, sanitizer report, or saved artifact.
      -r repro.nim
    ```
 
+   `useMalloc` exposes Nim allocations to ASan. `noSignalHandler` lets ASan
+   report signal-based crashes.
+
 8. **Use fuzzing or integration tests only when direct reproduction is
    insufficient.** Keep the harness narrow and save inputs, commands, and logs.
 9. **Classify and report.** If the reproducer does not confirm the issue,
@@ -151,7 +161,7 @@ stack trace, sanitizer report, or saved artifact.
 
 # Common Mistakes
 
-|| Mistake | Why it is wrong |
+| Mistake | Why it is wrong |
 |---|---|
 | Marking a source-only claim `CONFIRMED` | Confirmation requires executable evidence. |
 | Reporting a risky API call without a reachable externally-controlled path | API presence is not a defect. |
@@ -159,7 +169,3 @@ stack trace, sanitizer report, or saved artifact.
 | Using precise-looking probability math | It hides uncertainty and encourages over-claiming. |
 | Letting one hypothesis absorb the review | Bounded confirmation keeps the workflow deterministic and forces honest downgrades. |
 | Treating `assert` as a reliable guard | `assert` is compiled out in `-d:danger`; use `doAssert` in tests. |
-
-# References
-
-No reference files yet.

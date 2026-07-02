@@ -1,8 +1,7 @@
 # Protocol fuzzer: HTTP request parser
 
-Full harness for fuzzing an HTTP request parser. Demonstrates string
-extraction, error triage classification, and the `quit(70)` pattern for
-signaling findings.
+Harness excerpt for fuzzing an HTTP request parser. Demonstrates string
+extraction, error triage, and seed selection.
 
 ## Source: `harness/asynchttpserver_fuzzer.nim` (annotated)
 
@@ -47,31 +46,32 @@ proc parseMethod(part: string): HttpMethod =
     raise newException(ValueError, "unknown method")
 
 proc nextLine(input: string, pos: var int): string =
-  if pos >= input.len: return ""
-  let start = pos
-  while pos < input.len and input[pos] notin {'\r', '\n'}:
-    inc pos
-  result = input[start ..< pos]
-  if pos < input.len and input[pos] == '\r': inc pos
-  if pos < input.len and input[pos] == '\n': inc pos
+  result = ""
+  if pos < input.len:
+    let start = pos
+    while pos < input.len and input[pos] notin {'\r', '\n'}:
+      inc pos
+    result = input[start ..< pos]
+    if pos < input.len and input[pos] == '\r': inc pos
+    if pos < input.len and input[pos] == '\n': inc pos
 
 # ... (parseFullRequestOriginal omitted for brevity, see full source) ...
 
 # --- Harness ---
 
 proc testOneInput(data: ptr UncheckedArray[byte], len: int): cint {.
-    exportc: "LLVMFuzzerTestOneInput", raises: [].} =
+    cdecl, exportc: "LLVMFuzzerTestOneInput", raises: [].} =
   result = 0
-  if len == 0: return
-  var input = newString(len)
-  copyMem(addr input[0], data, len)
-  try:
-    parseFullRequestOriginal(input)
-  except ValueError:
-    discard          # Valid rejection: malformed HTTP
+  if len > 0:
+    var input = newString(len)
+    copyMem(addr input[0], data, len)
+    try:
+      discard parseFullRequestOriginal(input)
+    except ValueError:
+      discard          # Valid rejection: malformed HTTP
   # With --panics:on, Defects auto-crash the process — no catch needed
 
-proc initialize(): cint {.exportc: "LLVMFuzzerInitialize".} =
+proc initialize(): cint {.cdecl, exportc: "LLVMFuzzerInitialize".} =
   {.emit: "N_CDECL(void, NimMain)(void); NimMain();".}
 ```
 
