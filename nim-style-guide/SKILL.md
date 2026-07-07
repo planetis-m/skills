@@ -62,6 +62,10 @@ Larger examples live under `references/`.
 
 - Prefer compact wrapped calls over one-argument-per-line call blocks.
 - Use UFCS when it reads like an accessor.
+- Use normal parentheses for calls inside comparisons, boolean expressions, or
+  nested call arguments: write `foo(1) == 1`, not `foo 1 == 1`.
+- Parenthesize the operand of `not`: write `not (a or b)` and
+  `not (x < y)`. For membership, write `x notin items`.
 - Use `let` by default.
 - Use `var` only for values that mutate.
 - Keep local declarations close to first use.
@@ -80,6 +84,15 @@ These whitespace choices change how Nim parses code:
 - **Attach `(` to a callable name for a parenthesized call.**
   - `foo(1, 2)` passes two `int` arguments.
   - `foo (1, 2)` passes a single `(int, int)` tuple. Nim treats the parenthesized comma-list as a tuple constructor.
+
+- **Do not let command-call syntax absorb comparisons or commas.**
+  - `foo 1 == 1` parses like `foo(1 == 1)`, not `foo(1) == 1`.
+  - When a call result is an argument to another call, write `same(1, 1)`.
+
+- **Group negated compound expressions.**
+  - `not a or b` means `(not a) or b`, not `not (a or b)`.
+  - `not x < y` can mean `(not x) < y`. Write `not (x < y)`.
+  - Write `x notin items`, not `not x in items`.
 
 - **Construct range types with `..`.**
   - `range[0..n-1]` is a range type. `range[0..<n]` is invalid.
@@ -125,6 +138,7 @@ lines from the body.
 | Using `template` where ordinary call semantics are sufficient | It expands code at the call site without providing useful substitution, laziness, or control-flow abstraction. |
 | Writing one argument per line by default | It adds vertical noise without adding structure. |
 | Using `var` for values that never mutate | It hides which locals actually change. |
+| Writing `not x < y` when negating a comparison | Nim can parse it as `(not x) < y`. Write `not (x < y)`. |
 | Turning every branch into an early `return` in a multi-step proc | It makes the normal path harder to scan. |
 | Using `continue` | A structured branch keeps the loop invariant visible. |
 | Restating every object field in a constructor | It adds noise and can hide which fields are intentionally overridden. |

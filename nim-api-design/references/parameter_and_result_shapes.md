@@ -51,6 +51,8 @@ doAssert hidden.matchedPaths.len == 3
 ## Key points
 
 - `WorkspaceId` prevents accidental mixing with arbitrary strings.
+- Define or borrow only the base comparison operators you need; Nim derives
+  `!=`, `>`, and `>=`.
 - Related scan knobs form one options object with a simple default path.
 - `Natural` constrains the public parameter while storage remains `int`.
 - `ScanSummary` gives the public result stable names and room to evolve.

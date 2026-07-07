@@ -50,7 +50,7 @@ doAssert pending.len == 0
 
 ## Key points
 
-- `openArray` reads several caller container shapes.
+- `openArray` supports read-only traversal of several caller container shapes.
 - `var openArray` mutates elements without permitting resize or replacement.
 - `var seq` exposes caller-visible resizing.
 - `sink` allows move-or-copy ownership transfer; retained values may be

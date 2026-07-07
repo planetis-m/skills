@@ -18,6 +18,7 @@ type
 
 proc `==`*(a, b: PackageId): bool {.borrow.}
 proc `$`*(id: PackageId): string {.borrow.}
+proc hash*(id: PackageId): Hash {.borrow.}
 
 proc raiseMissingPackage(id: PackageId) {.noinline, noreturn.} =
   raise newException(KeyError, "unknown package: " & $id)

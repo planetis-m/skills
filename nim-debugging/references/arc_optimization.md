@@ -31,12 +31,10 @@ proc main =
   var copied: FileEntries
   copySource.drainByCopy(copied)
   doAssert copied == sampleEntries()
-  doAssert copySource == default(FileEntries)
 
   var moveSource = sampleEntries()
   var moved: FileEntries
   moveSource.drainByMove(moved)
-  doAssert moved == copied
   doAssert moveSource == default(FileEntries)
 
 main()

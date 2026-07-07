@@ -31,6 +31,23 @@ block parse_bad_input:
 
 `doAssert` raises `AssertionDefect` on failure. For catchable exceptions, `doAssertRaises` passes only when the requested exception type is raised; otherwise the test exits non-zero.
 
+### Write unambiguous assertions
+
+Use ordinary call syntax and grouped negation inside `doAssert`:
+
+```nim
+proc foo(x: int): int = x
+proc same(x, y: int): bool = x == y
+
+doAssert foo(1) == 1, "foo should return its argument"
+doAssert same(1, 1), "same values should match"
+doAssert not (foo(1) < 0), "foo should not return a negative value"
+doAssert 4 notin @[1, 2, 3]
+```
+
+Avoid command-call syntax in assertions. `doAssert foo 1 == 1` can bind the
+comparison to `foo`, and `doAssert same 1, 1` can bind the comma to `doAssert`.
+
 ### Project layout
 
 ```
@@ -157,6 +174,7 @@ Then: `nim c -d:addressSanitizer -r tests/tester.nim`
 | Running ASan without `-d:useMalloc` | Nim's default allocator is not intercepted by ASan. |
 | Running ASan without `-d:noSignalHandler` | Nim's signal handler intercepts SIGSEGV before ASan reports. |
 | Using only `--passC` without `--passL` for ASan | The sanitizer runtime must be linked. |
+| Writing `doAssert foo 1 == 1` | Nim parses it like `doAssert foo(1 == 1)`. Use `doAssert foo(1) == 1`. |
 
 ## References
 
