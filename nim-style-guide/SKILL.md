@@ -89,6 +89,10 @@ These whitespace choices change how Nim parses code:
   - `foo 1 == 1` parses like `foo(1 == 1)`, not `foo(1) == 1`.
   - When a call result is an argument to another call, write `same(1, 1)`.
 
+- **Use `[:T]` for explicit generic parameters in UFCS calls.**
+  - `x.p[:T]()` rewrites to `p[T](x)`.
+  - `x.p[T]()` parses as `(x.p)[T]()` and usually means indexing the result.
+
 - **Group negated compound expressions.**
   - `not a or b` means `(not a) or b`, not `not (a or b)`.
   - `not x < y` can mean `(not x) < y`. Write `not (x < y)`.

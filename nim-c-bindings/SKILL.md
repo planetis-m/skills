@@ -5,7 +5,7 @@ description: Bind C libraries to Nim and make them build reliably across Linux, 
 
 # Nim C Bindings & CI
 
-Rules for writing portable Nim-to-C bindings and cross-platform CI/release workflows. Reference workflows and examples live in `references/`.
+Rules for writing portable Nim-to-C bindings and cross-platform CI/release workflows.
 
 ## Rules
 
