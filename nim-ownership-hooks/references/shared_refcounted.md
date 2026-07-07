@@ -45,7 +45,7 @@ Key points:
 - `alloc0` initializes the counter to `0` — one unique owner
 - `=copy` increments source's counter **before** destroying dest — this protects self-assignment: inc→dec balances, no free
 - No self-assignment guard needed — increment-before-destroy makes `x = x` safe
-- No `{.nodestroy.}` on `=dup` — the counter balances the implicit return-path destroy
+- No `{.nodestroy.}` on `=dup` — it only increments the counter and shares the pointer
 - When the type may cross thread boundaries, use `allocShared`/`deallocShared` for both `obj` and `rc`
 
 ## SharedPtr — packed counter, generic, atomic
