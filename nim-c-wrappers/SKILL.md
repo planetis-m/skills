@@ -68,12 +68,12 @@ Struct types: `object` in C order. Fixed arrays: `array[N, T]`. Pointer+length: 
 
 - Strip redundant C prefixes (LIB_, foo_); keep names that disambiguate or match docs.
 - Keep raw constant names in C style (e.g., `CURLE_OK`).
-- Rename Nim keywords: `type` → `typ`, `addr` → `address`. Use `importc:` to map to the original C name.
+- When a C identifier collides with a Nim keyword, rename the Nim identifier and use `importc:` to map to the original C name.
 
 ### Callbacks
 
-- Declare callbacks as plain C-callable procs such as `proc onEvent(code: cint; userData: pointer) {.cdecl.}`. Do not pass Nim closures to C.
-- For callback state, use a global table keyed by `userdata`. Ensure Nim data is globally rooted or manually managed.
+- Declare callbacks as plain C-callable procs such as `proc onEvent(code: cint; userData: pointer) {.cdecl.}`.
+- Pass closure state through `userdata` via `rawProc`/`rawEnv`. See `references/callback_pattern.md`.
 
 ### Verification
 
