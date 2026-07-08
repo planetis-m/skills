@@ -35,7 +35,7 @@ proc initHandle*(width, height: int): Handle =
 
 ## Key points
 
-- `{.error.}` on `=copy`/`=dup` prevents accidental double-free at compile time.
+- `{.error.}` on `=copy` and `=dup` prevents accidental double-free at compile time.
 - `{.error.}` on `=sink` prevents ownership transfer after construction.
 - Use `ensureMove()` to initialize a new owner from an existing variable.
 - `=wasMoved` must nil out the raw pointer so `=destroy` is a no-op on moved-from objects.

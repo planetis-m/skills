@@ -32,7 +32,7 @@ Larger examples live under `references/`.
 - Use normal word casing such as `parseUrl` and `httpStatus`.
 - Give the most-used representation the base type name. Suffix the others with
   `Obj`, `Ref`, or `Ptr`.
-- Suffix exception types with `Error` or `Defect`.
+- Suffix catchable exception types with `Error` and programming-bug defect types with `Defect`.
 - For non-pure enums, prefix values such as `pcFile`. For pure enums, use `PascalCase`.
 - Prefix mutable views with `m`, as in `mitems` and `mpairs`.
 - Pair in-place and copied transforms as `reverse` and `reversed`. If the copy

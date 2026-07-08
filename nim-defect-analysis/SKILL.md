@@ -136,8 +136,8 @@ stack trace, sanitizer report, or saved artifact.
 
    ```bash
    nim c --panics:on -r repro.nim
-   nim c -d:release --stackTrace:on -r repro.nim
-   nim c -d:danger --stackTrace:on -r repro.nim
+   nim c -d:release --lineTrace:on -r repro.nim
+   nim c -d:danger --lineTrace:on -r repro.nim
    nim c --mm:arc -r repro.nim
    ```
 

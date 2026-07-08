@@ -31,8 +31,7 @@ Default to plain data, one clear surface, and names that match the standard libr
   boolean membership.
 - For collection-like types, expose `items` and `pairs`. Add `mitems` and
   `mpairs` only when callers may safely mutate yielded values.
-- For comparable types, define `==` and the needed base ordering operators
-  such as `<` or `<=`. Do not define `!=`, `>`, or `>=`; Nim derives them.
+- For comparable types, define `==`, `<` and `<=`. Do not define `!=`, `>`, or `>=`; Nim derives them.
 
 ### Contracts
 

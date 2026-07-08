@@ -58,8 +58,6 @@ Struct types: `object` in C order. Fixed arrays: `array[N, T]`. Pointer+length: 
 
 ### Ergonomic Layer
 
-- For **move-only** resources: implement `=destroy` and `=wasMoved`; mark `=copy`, `=dup`, and `=sink` with `{.error.}`. Use `ensureMove()` for ownership transfer.
-- For **reference-counted** resources: use a `ptr int` counter. `=copy`/`=dup` increment, `=destroy` decrements and frees at zero. Use field-by-field assignment in `=dup`, not `result = src`.
 - In `=destroy`, explicitly call `=destroy` on owned nested GC-managed fields (string, seq) after releasing C resources.
 - Define ownership hooks in the **same module** as the type. Cross-module hook definitions are a compile error.
 - Raise exceptions (IOError, ValueError, etc.) for C errors — do not return result wrappers that only carry ok/kind/message.

@@ -29,7 +29,7 @@ block parse_bad_input:
     discard parseThing("")
 ```
 
-`doAssert` raises `AssertionDefect` on failure. For catchable exceptions, `doAssertRaises` passes only when the requested exception type is raised; otherwise the test exits non-zero.
+`doAssert` raises `AssertionDefect` on failure. `doAssertRaises` passes only when the requested exception type is raised; otherwise the test exits non-zero.
 
 ### Write unambiguous assertions
 
@@ -127,7 +127,7 @@ Keep test files self-contained when practical. If setup is repeated, extract dom
 | `-d:danger`           | No              | Raising frame only       |
 
 - **Overflow checks:** Disabled in danger. Use `when defined(danger)` guards.
-- **Stack traces:** Release and danger show only the raising frame. Add `--stackTrace:on` to restore full traces. Add `--lineTrace:on` for line numbers in those frames.
+- **Stack traces:** Release and danger show only the raising frame. Add `--lineTrace:on` to restore full traces with line numbers.
 - **`assert`:** Compiled out in danger. Use `doAssert`.
 
 ## AddressSanitizer
