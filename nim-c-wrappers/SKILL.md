@@ -68,7 +68,7 @@ Struct types: `object` in C order. Fixed arrays: `array[N, T]`. Pointer+length: 
 
 - Strip redundant C prefixes (LIB_, foo_); keep names that disambiguate or match docs.
 - Keep raw constant names in C style (e.g., `CURLE_OK`).
-- Rename Nim keywords: `type` → `typ`, `addr` → `address`, or use `importc:` to preserve the C name.
+- Rename Nim keywords: `type` → `typ`, `addr` → `address`. Use `importc:` to map to the original C name.
 
 ### Callbacks
 
