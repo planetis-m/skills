@@ -4,22 +4,20 @@ Pattern for shared-ownership resources using a manual reference count.
 
 ```nim
 type
-  LibAsset {.importc: "LIB_Asset", incompleteStruct.} = object
+  LIB_Asset {.importc, incompleteStruct.} = object
 
-proc libLoad*(path: cstring): ptr LibAsset
-  {.importc: "LIB_Load", cdecl.}
-proc libFreeAsset*(p: ptr LibAsset)
-  {.importc: "LIB_FreeAsset", cdecl.}
+proc LIB_Load*(path: cstring): ptr LIB_Asset {.importc, cdecl.}
+proc LIB_FreeAsset*(p: ptr LIB_Asset) {.importc, cdecl.}
 
 type
   Asset* = object
-    raw: ptr LibAsset
+    raw: ptr LIB_Asset
     rc: ptr int
 
 proc `=destroy`*(a: Asset) =
   if a.raw != nil:
     if a.rc[] == 0:
-      libFreeAsset(a.raw)
+      LIB_FreeAsset(a.raw)
       dealloc(a.rc)
     else:
       dec a.rc[]
@@ -47,7 +45,7 @@ proc `=dup`*(src: Asset): Asset =
     inc result.rc[]
 
 proc loadAsset*(path: string): Asset =
-  let raw = libLoad(path.cstring)
+  let raw = LIB_Load(path.cstring)
   if raw == nil:
     raise newException(IOError, "Failed to load asset: " & path)
   result = Asset(

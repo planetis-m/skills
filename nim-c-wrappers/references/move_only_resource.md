@@ -4,20 +4,18 @@ Complete pattern for wrapping a C create/destroy handle as a Nim move-only objec
 
 ```nim
 type
-  LibHandle {.importc: "LIB_Handle", incompleteStruct.} = object
+  LIB_Handle {.importc, incompleteStruct.} = object
 
-proc libCreate*(width, height: cint): ptr LibHandle
-  {.importc: "LIB_Create", cdecl.}
-proc libDestroy*(h: ptr LibHandle)
-  {.importc: "LIB_Destroy", cdecl.}
+proc LIB_Create*(width, height: cint): ptr LIB_Handle {.importc, cdecl.}
+proc LIB_Destroy*(h: ptr LIB_Handle) {.importc, cdecl.}
 
 type
   Handle* = object
-    raw: ptr LibHandle
+    raw: ptr LIB_Handle
 
 proc `=destroy`*(h: Handle) =
   if h.raw != nil:
-    libDestroy(h.raw)
+    LIB_Destroy(h.raw)
 
 proc `=wasMoved`*(h: var Handle) =
   h.raw = nil
@@ -26,8 +24,8 @@ proc `=sink`*(dest: var Handle; src: Handle) {.error.}
 proc `=copy`*(dest: var Handle; src: Handle) {.error.}
 proc `=dup`*(src: Handle): Handle {.error.}
 
-proc initHandle*(width, height: int): Handle =
-  let raw = libCreate(cint width, cint height)
+proc newHandle*(width, height: int): Handle =
+  let raw = LIB_Create(cint width, cint height)
   if raw == nil:
     raise newException(ValueError, "Failed to create handle")
   Handle(raw: raw)

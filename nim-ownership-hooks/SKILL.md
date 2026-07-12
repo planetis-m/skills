@@ -11,8 +11,6 @@ Use this skill when writing or reviewing Nim ownership hooks under ARC or ORC.
 
 Start by classifying the type's ownership model. Then implement exactly the hook set that model requires — no more, no less. Do not force one ownership model onto another: a shared handle should not become move-only just because it has a destructor, and a deep-owning container should not pretend copies are cheap shares.
 
-Complete examples for each ownership model live in `references/`.
-
 ## 2. Rules
 
 ### When to write hooks

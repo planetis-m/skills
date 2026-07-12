@@ -5,7 +5,7 @@ description: Turn low-level C FFI bindings into an idiomatic Nim API, with safer
 
 # Nim C Wrappers
 
-This skill covers the two-layer pattern for wrapping C libraries in Nim: a raw FFI layer for ABI correctness and an ergonomic Nim layer for safety and usability. Larger examples live in `references/`.
+This skill covers the two-layer pattern for wrapping C libraries in Nim: a raw FFI layer for ABI correctness and an ergonomic Nim layer for safety and usability.
 
 ## Rules
 
@@ -18,13 +18,13 @@ This skill covers the two-layer pattern for wrapping C libraries in Nim: a raw F
 
 ### Raw FFI Layer
 
-- Use `importc` with `cdecl` (or `stdcall` if the library requires it). Prefer `{.push callconv: cdecl, header: "foo.h".}` blocks for shared conventions.
+- Use `importc` with `cdecl` (or `stdcall` if the library requires it). Prefer `{.push callconv: cdecl, importc.}` blocks for shared conventions.
 - `header` declares linker-resolved imports; `dynlib` loads symbols at runtime. Do not combine them on one proc. Guard library names with `when defined(windows):` etc.
 - **Never reorder struct fields.** Use `object` in C field order. Add `packed` only if C headers specify packing.
 - Use `incompleteStruct` and list only needed fields to reduce ABI risk.
 - For C enums, use `distinct` integer types + `const` values. Do not use Nim `enum` in raw bindings. Find actual enum values in C headers—do not guess.
 - For bitflags, use `distinct` integer types with bitwise helpers. Do not use `set[Enum]`.
-- Map C macros: numeric → `const`; function-like → `inline proc` or `template`; sizeof/side-effect → `template`.
+- Map C macros: numeric → `const`; function-like → `template`; use `inline proc` when arguments should evaluate once.
 - Keep pointer types as C intends — do not convert them in the raw layer.
 
 ### Type Mapping
@@ -66,7 +66,9 @@ Struct types: `object` in C order. Fixed arrays: `array[N, T]`. Pointer+length: 
 
 ### Naming
 
-- Strip redundant C prefixes (LIB_, foo_); keep names that disambiguate or match docs.
+- In raw bindings, match C identifier names directly.
+- `importc` without an explicit string resolves the C symbol from the Nim name.
+- Strip redundant C prefixes (LIB_, foo_) in the ergonomic layer.
 - Keep raw constant names in C style (e.g., `CURLE_OK`).
 - When a C identifier collides with a Nim keyword, rename the Nim identifier and use `importc:` to map to the original C name.
 

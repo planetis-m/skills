@@ -37,14 +37,14 @@ const
 
 {.push callconv: cdecl, importc, dynlib: fooDll.}
 
-proc libLoadTexture*(path: cstring): Texture
-proc libUnloadTexture*(texture: Texture)
-proc libDrawTexture*(texture: Texture; source, dest: Rect; color: Color)
+proc lib_load_texture*(path: cstring): Texture
+proc lib_unload_texture*(texture: Texture)
+proc lib_draw_texture*(texture: Texture; source, dest: Rect; color: Color)
 
 {.pop.}
 
 proc `=destroy`*(t: Texture) =
-  if t.id > 0: libUnloadTexture(t)
+  if t.id > 0: lib_unload_texture(t)
 proc `=wasMoved`*(x: var Texture) =
   x.id = 0
 proc `=dup`*(src: Texture): Texture {.error.}
@@ -57,12 +57,12 @@ import ./bindings/foo_raw
 export foo_raw
 
 proc loadTexture*(path: string): Texture =
-  result = libLoadTexture(path.cstring)
+  result = lib_load_texture(path.cstring)
   if result.id == 0:
     raise newException(IOError, "Failed to load texture: " & path)
 
 proc drawTexture*(texture: Texture; src, dest: Rect; tint: Color) {.inline.} =
-  libDrawTexture(texture, src, dest, tint)
+  lib_draw_texture(texture, src, dest, tint)
 ```
 
 ## Rules
@@ -74,3 +74,4 @@ proc drawTexture*(texture: Texture; src, dest: Rect; tint: Color) {.inline.} =
 - Ergonomic procs use Nim types (`int`, `float`, `string`) for scalar params and returns. Convert to C types at the raw call boundary.
 - Thin wrappers where the C API is already the public API: skip the split, use a single flat module.
 - Avoid `from ... import nil` — it forces every type and proc through a module qualifier, adding noise with no real benefit.
+- Use qualified `module.symbol` access only to resolve genuine name conflicts between imported modules.

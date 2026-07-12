@@ -3,28 +3,32 @@ name: nim-style-guide
 description: Write clear, consistent Nim code in a simple stdlib-aligned style, covering imports, naming, proc vs func vs template choices, local variables, constructors, formatting, and control flow. Use when writing new Nim code or reviewing a Nim module for readability, consistency, and low-noise style decisions.
 ---
 
-# Preamble
+# Nim Style Guide
 
 Prefer concise, structured code that the compiler and reader can reason about.
-Larger examples live under `references/`.
 
 # Rules
 
 ## Formatting
 
 - Indent blocks with 2 spaces and use spaces instead of tab characters.
-- Keep lines at or below 80 characters.
+- Keep lines at or below 100 characters.
 - Use ordinary spacing instead of aligning columns by hand.
 - Write range operators compactly: `a..b`, `a..<b`, and `a..^b`. Add spaces
   when an operand contains an operator, as in `a .. -3`.
+- In `range` type constructors, use `..`: `range[0..n-1]` is valid;
+  `range[0..<n]` is invalid.
 - Indent wrapped declarations, calls, and conditions one extra level.
 - Start multiline triple-quoted strings on the next line.
 
 ## Imports And Naming
 
 - Use `std/...` imports for stdlib modules.
-- Group broad stdlib imports with `import std/[a, b, c]`.
-- Use `from std/foo import bar, baz` when you only need a small API slice.
+- Group imports from the same directory: `import std/[a, b, c]`,
+  `import lib/[x, y, z]`.
+- Use `from foo import bar, baz` when you only need a small API slice.
+- `import` brings symbols into scope without qualification.
+- Use qualified `module.symbol` access only to resolve genuine name conflicts between imported modules.
 - Types use `PascalCase`.
 - Procs, funcs, iterators, templates, vars, and fields use `camelCase`.
 - Constants may use `camelCase` or `PascalCase`.
@@ -51,7 +55,6 @@ Larger examples live under `references/`.
 - Use `func` for pure helpers and pure accessors when checked purity helps.
 - Use `template` when call-site substitution, lazy evaluation, or a
   control-flow abstraction is required.
-- Keep ordinary runtime helper logic in a `proc` or `func`.
 - Prefer `proc` and `func` over `method`. Use `method` only when you need runtime dispatch.
 - Prefer top-level helpers for reusable logic.
 - Use a nested proc when the logic is truly local or when you want a closure.
@@ -62,44 +65,38 @@ Larger examples live under `references/`.
 
 - Prefer compact wrapped calls over one-argument-per-line call blocks.
 - Use UFCS when it reads like an accessor.
-- Use normal parentheses for calls inside comparisons, boolean expressions, or
-  nested call arguments: write `foo(1) == 1`, not `foo 1 == 1`.
-- Parenthesize the operand of `not`: write `not (a or b)` and
-  `not (x < y)`. For membership, write `x notin items`.
 - Use `let` by default.
 - Use `var` only for values that mutate.
 - Keep local declarations close to first use.
 - Keep public and reusable types at module scope.
 - Group related fields with the same type when it improves readability.
-- When using object constructors, set the fields you want to override and omit the fields that should keep their defaults.
+- Prefer object constructors (`TypeName(field: value)`) over field-by-field
+  assignment into an uninitialized `result`.
+- Omit fields that should keep their declared defaults.
 
 ## Parsing-Sensitive Whitespace
 
 These whitespace choices change how Nim parses code:
 
 - **Attach `[` to a type name.**
-  - `array[0..4, bool]` compiles. `array [0..4, bool]` does not.
-  - The same applies to `seq[string]`, `Table[string, int]`, etc.
+  - `array[N, T]` compiles. `array [N, T]` does not.
+  - The same applies to `seq[T]`, `Table[K, V]`, etc.
 
 - **Attach `(` to a callable name for a parenthesized call.**
   - `foo(1, 2)` passes two `int` arguments.
   - `foo (1, 2)` passes a single `(int, int)` tuple. Nim treats the parenthesized comma-list as a tuple constructor.
 
-- **Do not let command-call syntax absorb comparisons or commas.**
+- **Do not use command-call syntax with comparisons or nested calls.**
   - `foo 1 == 1` parses like `foo(1 == 1)`, not `foo(1) == 1`.
-  - When a call result is an argument to another call, write `same(1, 1)`.
+  - `outer(inner 1, 1)` parses as `outer(inner(1), 1)`, not `outer(inner(1, 1))`.
 
 - **Use `[:T]` for explicit generic parameters in UFCS calls.**
   - `x.p[:T]()` rewrites to `p[T](x)`.
   - `x.p[T]()` parses as `(x.p)[T]()` and usually means indexing the result.
 
 - **Group negated compound expressions.**
-  - `not a or b` means `(not a) or b`, not `not (a or b)`.
-  - `not x < y` can mean `(not x) < y`. Write `not (x < y)`.
+  - Parenthesize compound operands of `not`: `not a or b` parses as `(not a) or b`, so write `not (a or b)` and `not (x < y)`.
   - Write `x notin items`, not `not x in items`.
-
-- **Construct range types with `..`.**
-  - `range[0..n-1]` is a range type. `range[0..<n]` is invalid.
 
 ## Line Continuation
 
@@ -129,7 +126,7 @@ lines from the body.
 3. Shape the control flow.
    Use structured control flow. Return directly when a loop finds its result.
 4. Clean up locals and constructors.
-   Use `let` by default, keep locals near first use, keep reusable helpers at module scope, and let constructors keep declaration defaults unless you are overriding them.
+   Use `let` by default, keep locals near first use, and keep reusable helpers at module scope.
 5. Remove noise.
    Remove unused imports, dead helpers, column alignment, and stretched call formatting.
 
@@ -139,15 +136,12 @@ lines from the body.
 |---------|-----------------|
 | Using `method` as the default callable kind | It adds runtime dispatch where a plain `proc` or `func` would usually be clearer. |
 | Hiding reusable helpers inside another proc | It makes the helper harder to reuse and easier to turn into an accidental closure. |
-| Using `template` where ordinary call semantics are sufficient | It expands code at the call site without providing useful substitution, laziness, or control-flow abstraction. |
 | Writing one argument per line by default | It adds vertical noise without adding structure. |
 | Using `var` for values that never mutate | It hides which locals actually change. |
-| Writing `not x < y` when negating a comparison | Nim can parse it as `(not x) < y`. Write `not (x < y)`. |
 | Turning every branch into an early `return` in a multi-step proc | It makes the normal path harder to scan. |
 | Using `continue` | A structured branch keeps the loop invariant visible. |
-| Restating every object field in a constructor | It adds noise and can hide which fields are intentionally overridden. |
-| Assigning fields into a zero-initialized `result` when the type declares field defaults | Initialize with `TypeName()` first, or use an object constructor, so declared defaults are applied. |
 
 # References
 
 - `references/core_patterns.md`: Simple default patterns for imports, callable kinds, wrapping, locals, and constructors.
+- `references/template_usage.md`: Template patterns where a `proc` cannot substitute: scoped cleanup, caller-named access, and lazy evaluation.

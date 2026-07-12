@@ -3,11 +3,9 @@ name: atlas-package-cloner
 description: Use Atlas to initialize Nim projects, install or update Atlas-managed dependencies, configure dependency directories, inspect Atlas-generated nim.cfg paths, handle Atlas overrides, features, plugins, lockfiles, and local Nim environments. Use when setting up or repairing Nim dependency workflows that use Atlas instead of Nimble's global package path.
 ---
 
-# Preamble
+# Atlas Package Cloner
 
 Use this skill to manage Nim dependencies with Atlas. Atlas stores dependency state under the configured dependency directory, `deps/` by default, and uses Atlas-managed config plus generated Nim compiler paths to make packages importable.
-
-Task examples live under `references/`.
 
 # Rules
 

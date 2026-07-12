@@ -3,7 +3,7 @@ name: nim-defect-analysis
 description: Find and classify reliability defects in Nim code using deterministic triage, bounded confirmation, root-cause tracing, and evidence-backed reports. Use when reviewing Nim source for robustness issues in parsers, I/O handlers, FFI boundaries, async code, or ownership hooks, diagnosing unhandled defect paths, or reducing false positives in code-quality findings.
 ---
 
-# Preamble
+# Nim Defect Analysis
 
 Use this skill to review Nim code for robustness and correctness defects. Treat
 every finding as a hypothesis until a static trace and, where practical, a small

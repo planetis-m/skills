@@ -15,7 +15,7 @@ Rules for writing portable Nim-to-C bindings and cross-platform CI/release workf
 - Represent opaque C handles as `type Name = ptr object` types. Use `incompleteStruct` for partial/opaque structs to avoid size/layout mismatches.
 - Use `{.bycopy.}` on structs that Nim must pass by value to C.
 - Declare the C header in the binding when the compiler needs the C definitions for compilation, for example `header: "foo.h"`.
-- Use `{.push callconv: cdecl, header: "foo.h".}` blocks when many declarations share the same convention and header.
+- Use `{.push callconv: cdecl, importc.}` blocks when many declarations share the same convention.
 - Match C storage with Nim's C-compatible types such as `cint`, `cuint`,
   `clong`, `culong`, `clonglong`, `csize_t`, `cfloat`, `cdouble`, `cstring`,
   and pointer types.

@@ -3,7 +3,7 @@ name: nim-debugging
 description: Debug Nim compile failures, crashes, wrong results, macro expansion, ownership behavior, and unsafe-memory defects using focused reproduction, stack traces, inspection, compiler expansion, and sanitizers. Use when diagnosing runtime failures, release-only behavior, generic or macro issues, unexpected copies, pointer bugs, or memory leaks.
 ---
 
-# Preamble
+# Nim Debugging
 
 Debug by reducing uncertainty: preserve the failure, state one hypothesis, and
 collect the smallest piece of evidence that can reject it. Find the first

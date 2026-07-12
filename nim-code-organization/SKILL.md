@@ -3,11 +3,10 @@ name: nim-code-organization
 description: Organize Nim modules and multi-step workflows with explicit state ownership, cohesive boundaries, narrow exports, and structured orchestration. Use when refactoring a large Nim file, splitting logic across modules, designing parser-style stateful code, or simplifying nested helpers and hidden mutable state.
 ---
 
-# Preamble
+# Nim Code Organization
 
 Use this skill to make state, invariants, and control flow easy to follow.
-Choose the smallest structure that exposes the real workflow. Larger examples
-live under `references/`.
+Choose the smallest structure that exposes the real workflow.
 
 # Rules
 

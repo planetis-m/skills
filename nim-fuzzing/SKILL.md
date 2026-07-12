@@ -3,7 +3,7 @@ name: nim-fuzzing
 description: Set up and run libFuzzer-based fuzz targets for Nim code, including harness wiring, compilation flags, corpus management, structure-aware mutators, and crash triage. Use when adding fuzzing to a Nim project, building a fuzz harness for a parser/protocol/format handler, or reproducing and minimizing a fuzzer-found crash.
 ---
 
-# Preamble
+# Nim Fuzzing
 
 Use this skill to build, run, and triage libFuzzer targets for Nim code.
 libFuzzer is an in-process, coverage-guided fuzzing engine from LLVM/Clang.

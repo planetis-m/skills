@@ -9,9 +9,9 @@ type
   LibMode* = distinct cint
 
 const
-  LIB_ModeA* = LibMode(0)
-  LIB_ModeB* = LibMode(2)
-  LIB_ModeC* = LibMode(3)
+  LIB_MODE_A* = LibMode(0)
+  LIB_MODE_B* = LibMode(2)
+  LIB_MODE_C* = LibMode(3)
   
 proc `==`*(a, b: LibMode): bool {.borrow.}
 ```

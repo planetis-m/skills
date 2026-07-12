@@ -26,6 +26,12 @@ func formatNote(number: int; title, details: string): string =
   if details.len > 0:
     result.add " — " & details
 
+proc makeOptions(heading = ""; includeUntitled = false): RenderOptions =
+  result = RenderOptions()
+  if heading.len > 0:
+    result.heading = heading
+  result.includeUntitled = includeUntitled
+
 proc renderNotes(notes: openArray[ReleaseNote];
     options = RenderOptions()): seq[string] =
   result.add options.heading
@@ -44,6 +50,10 @@ let notes = [
 doAssert notes.find("Fixed Cache") == 2
 doAssert notes.find("removed") == -1
 
+doAssert makeOptions().heading == "Changes"
+doAssert makeOptions("Custom").heading == "Custom"
+doAssert makeOptions(includeUntitled = true).includeUntitled
+
 doAssert renderNotes(notes) == @[
   "Changes",
   "1. Added Search — new index",
@@ -59,3 +69,11 @@ doAssert allNotes == @[
   "3. Fixed Cache"
 ]
 ```
+
+## Key points
+
+- `makeOptions` initializes `result = RenderOptions()` before assigning
+  fields, so the declared default `heading: string = "Changes"` is applied.
+  Without that line, `result.heading` would be `""`, not `"Changes"`.
+- Omitted fields in object constructors use their declared defaults, so
+  `RenderOptions(includeUntitled: true)` keeps `heading = "Changes"`.

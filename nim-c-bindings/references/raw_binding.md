@@ -34,14 +34,11 @@ type
     bias*: cint
     capacity*: csize_t
 
-{.push cdecl, header: counterHeader.}
+{.push cdecl, header: counterHeader, importc.}
 
-proc counterOpen*(config: CounterConfig): Counter
-  {.importc: "counter_open".}
-proc counterClose*(handle: Counter)
-  {.importc: "counter_close".}
-proc counterPush*(handle: Counter; values: ptr cint; len: csize_t): cint
-  {.importc: "counter_push".}
+proc counter_open*(config: CounterConfig): Counter
+proc counter_close*(handle: Counter)
+proc counter_push*(handle: Counter; values: ptr cint; len: csize_t): cint
 
 {.pop.}
 ```
@@ -54,5 +51,4 @@ not manage the handle lifetime.
 
 - The incomplete C type is used only behind a pointer.
 - The by-value struct preserves the C field order and C-compatible types.
-- Nim names may be idiomatic while `importc` preserves the exact C symbols.
 - Linking and runtime packaging remain project decisions.

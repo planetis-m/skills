@@ -7,8 +7,6 @@ description: Document exported Nim modules and APIs with doc comments that `nim 
 
 Write doc comments in the source layout that `nim doc` actually uses.
 
-Larger examples live in `references/`.
-
 ## Rules
 
 ### Placement
