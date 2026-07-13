@@ -5,8 +5,6 @@ description: Turn low-level C FFI bindings into an idiomatic Nim API, with safer
 
 # Nim C Wrappers
 
-This skill covers the two-layer pattern for wrapping C libraries in Nim: a raw FFI layer for ABI correctness and an ergonomic Nim layer for safety and usability.
-
 ## Rules
 
 ### Architecture

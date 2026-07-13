@@ -5,8 +5,6 @@ description: Write clear, consistent Nim code in a simple stdlib-aligned style, 
 
 # Nim Style Guide
 
-Prefer concise, structured code that the compiler and reader can reason about.
-
 # Rules
 
 ## Formatting
@@ -19,7 +17,6 @@ Prefer concise, structured code that the compiler and reader can reason about.
 - In `range` type constructors, use `..`: `range[0..n-1]` is valid;
   `range[0..<n]` is invalid.
 - Indent wrapped declarations, calls, and conditions one extra level.
-- Start multiline triple-quoted strings on the next line.
 
 ## Imports And Naming
 
@@ -92,7 +89,7 @@ These whitespace choices change how Nim parses code:
 
 - **Use `[:T]` for explicit generic parameters in UFCS calls.**
   - `x.p[:T]()` rewrites to `p[T](x)`.
-  - `x.p[T]()` parses as `(x.p)[T]()` and usually means indexing the result.
+  - `x.p[T]()` parses as `(x.p)[T]()`, not a generic instantiation.
 
 - **Group negated compound expressions.**
   - Parenthesize compound operands of `not`: `not a or b` parses as `(not a) or b`, so write `not (a or b)` and `not (x < y)`.
@@ -106,6 +103,15 @@ continued line further than the statement that started it.
 
 For constructs with a body, double indentation can distinguish continuation
 lines from the body.
+
+## Multiline Strings
+
+- Use `"""..."""` triple-quoted literals instead of `"a\n" & "b\n"`
+  concatenation for multiline values.
+- Start with a newline right after `"""`. That newline is stripped, so the
+  value is identical; the content aligns with the next line.
+
+See `references/multiline_strings.md`.
 
 ## Control Flow
 
@@ -144,4 +150,4 @@ lines from the body.
 # References
 
 - `references/core_patterns.md`: Simple default patterns for imports, callable kinds, wrapping, locals, and constructors.
-- `references/template_usage.md`: Template patterns where a `proc` cannot substitute: scoped cleanup, caller-named access, and lazy evaluation.
+- `references/multiline_strings.md`: Triple-quoted multiline string patterns: leading newline, concatenation around interpolated values, and `dedent`.

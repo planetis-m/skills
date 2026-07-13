@@ -9,25 +9,31 @@ description: Design clear Nim error-handling flows; when to raise exceptions vs 
 
 ### Choose the Failure Channel
 
-- Raise when the caller must handle an outcome as failure, such as invalid data or failed I/O.
 - Return `bool` when success or failure is the whole result.
-- Return `Option[T]` when success produces a value but absence is expected.
+- Return `Option[T]` when success returns a value but absence is expected.
 - Use `bool` with a `var` parameter only when filling or mutating caller-owned storage is part of the API.
 - Convert per-item failures into structured outcomes at the batch boundary. Keep intermediate steps exception-based.
+
+### Validate at Boundaries
+
+- Add a failure path only when the condition prevents the operation from meeting its contract.
+- Use range types only as parameters.
+- Do not use range conversions; they raise `Defect` and silently accept invalid values under `-d:danger`.
 
 ### Place Boundaries
 
 - Let failures propagate through intermediate steps.
 - Catch only where the handler can recover, translate, or record the failure.
-- At a batch boundary, record recoverable per-item failures. If recording itself fails, let that failure escape to the application boundary.
+- At a batch boundary, record recoverable per-item failures.
 
 ### Choose Exception Types
 
-- Raise an existing specific type such as `ValueError`, `IOError`, or `OSError` when it fits.
-- Separate `except` branches when handling differs. Group exception types when handling is identical. Put more specific types first — Nim dispatches first-match, so a parent before a child makes the child branch unreachable with no warning.
+- For a contract failure caused by caller input or the environment, raise the closest existing `CatchableError`.
+- Separate `except` branches when handling differs. Group exception types when handling is identical.
+- Put child exception types before their parents in `except` branches.
 - Catch `CatchableError` only when the boundary handles every recoverable error. Do not catch bare `Exception`.
 - Add a custom exception only when callers handle it differently. Derive it from the closest existing `CatchableError` subtype.
-- Derive from `Defect` only for programming bugs that callers should not recover from.
+- Use `Defect` only when a contract failure proves an internal invariant is broken.
 
 ### Translate and Inspect Errors
 
@@ -42,8 +48,8 @@ description: Design clear Nim error-handling flows; when to raise exceptions vs 
 
 ## Workflow
 
-1. **Choose the failure channel** for each failure point: raise, return `bool`, return `Option[T]`, or structured per-item outcome.
-2. **Pick the exception type.** Prefer existing stdlib types; add a custom type only when callers handle it differently.
+1. **Define the operation's postcondition and trust boundaries.**
+2. **Classify only conditions that prevent that postcondition.**
 3. **Place catch boundaries** only where the handler can recover, translate, or record the failure.
 4. **Enforce contracts.** Add `{.raises: [].}` to procs that must not raise.
 

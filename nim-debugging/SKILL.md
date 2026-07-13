@@ -5,12 +5,7 @@ description: Debug Nim compile failures, crashes, wrong results, macro expansion
 
 # Nim Debugging
 
-Debug by reducing uncertainty: preserve the failure, state one hypothesis, and
-collect the smallest piece of evidence that can reject it. Find the first
-violated invariant rather than stopping at the final crash.
-
-Project configuration can override compiler defaults. Complete examples live
-under `references/`.
+Debug by reducing uncertainty: preserve the failure, state one hypothesis, and collect the smallest piece of evidence that can reject it. Find the first violated invariant rather than stopping at the final crash.
 
 # Rules
 

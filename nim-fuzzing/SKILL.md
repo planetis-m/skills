@@ -5,17 +5,7 @@ description: Set up and run libFuzzer-based fuzz targets for Nim code, including
 
 # Nim Fuzzing
 
-Use this skill to build, run, and triage libFuzzer targets for Nim code.
-libFuzzer is an in-process, coverage-guided fuzzing engine from LLVM/Clang.
-It works by repeatedly calling a user-defined `LLVMFuzzerTestOneInput` with
-mutated byte buffers, measuring coverage, and retaining inputs that discover
-new code paths.
-
-The skill covers harness structure, compilation, corpus creation, custom
-mutators for structured formats, standalone reproduction, and crash triage.
-It does NOT cover writing the code under test — only wiring it to the fuzzer.
-
-Worked examples live in `references/`.
+This skill covers wiring code to libFuzzer — harness structure, compilation, corpus, mutators, and crash triage. It does NOT cover writing the code under test.
 
 # Rules
 

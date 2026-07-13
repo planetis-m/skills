@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install Nim
         uses: jiro4989/setup-nim-action@v2
@@ -48,13 +48,13 @@ jobs:
         run: nim c -d:release -o:<package> <src/main.nim>
 
       - name: Run Tests
-        run: nim test
+        run: nim c -r tests/tester.nim
 
   macos:
     runs-on: macos-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install Nim
         uses: jiro4989/setup-nim-action@v2
@@ -75,13 +75,13 @@ jobs:
         run: nim c -d:release -o:<package> <src/main.nim>
 
       - name: Run Tests
-        run: nim test
+        run: nim c -r tests/tester.nim
 
   windows:
     runs-on: windows-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install Nim
         uses: jiro4989/setup-nim-action@v2
@@ -96,7 +96,7 @@ jobs:
         run: atlas install
 
       - name: Install system dependencies (vcpkg)
-        uses: johnwason/vcpkg-action@v7
+        uses: johnwason/vcpkg-action@v8
         id: vcpkg
         with:
           pkgs: <vcpkg-deps>
@@ -115,4 +115,4 @@ jobs:
           VCPKG_ROOT: ${{ github.workspace }}\vcpkg\installed\x64-windows-release
         run: |
           $env:PATH = "$env:VCPKG_ROOT\bin;" + $env:PATH
-          nim test
+          nim c -r tests/tester.nim

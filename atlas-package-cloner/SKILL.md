@@ -5,8 +5,6 @@ description: Use Atlas to initialize Nim projects, install or update Atlas-manag
 
 # Atlas Package Cloner
 
-Use this skill to manage Nim dependencies with Atlas. Atlas stores dependency state under the configured dependency directory, `deps/` by default, and uses Atlas-managed config plus generated Nim compiler paths to make packages importable.
-
 # Rules
 
 ## Project State

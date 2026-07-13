@@ -5,9 +5,6 @@ description: Build and debug Nimony compile-time plugins for code generation and
 
 # Nimony Plugins
 
-Use Nimony plugins for compile-time rewrites. Plugin modules import `plugins`
-and are compiled by Nimony.
-
 ## Rules
 
 ### Resolve the actual API

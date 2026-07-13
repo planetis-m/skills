@@ -5,7 +5,6 @@ description: Organize Nim modules and multi-step workflows with explicit state o
 
 # Nim Code Organization
 
-Use this skill to make state, invariants, and control flow easy to follow.
 Choose the smallest structure that exposes the real workflow.
 
 # Rules

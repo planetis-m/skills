@@ -125,8 +125,6 @@ doAssert inventory.find(hammer) == -1
   and raises one specific exception.
 - `find` returns a position, while `contains` returns boolean membership.
 - `getOrDefault` is the explicit fallback path.
-- Collection mutation uses `add`, keyed `del` as a no-op for absent keys, and
-  `clear`.
 - `hash` matches `==`, so `Sku` can be used as a table or set key.
 - Collection iteration uses `items` and `pairs`.
 - The borrowed result is returned directly from owner storage.

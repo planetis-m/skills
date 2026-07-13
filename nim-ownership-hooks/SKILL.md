@@ -5,13 +5,9 @@ description: Implement and review Nim ARC/ORC ownership hooks for types that man
 
 # Nim Ownership Hooks
 
-## 1. Preamble
-
-Use this skill when writing or reviewing Nim ownership hooks under ARC or ORC.
-
 Start by classifying the type's ownership model. Then implement exactly the hook set that model requires — no more, no less. Do not force one ownership model onto another: a shared handle should not become move-only just because it has a destructor, and a deep-owning container should not pretend copies are cheap shares.
 
-## 2. Rules
+## Rules
 
 ### When to write hooks
 
@@ -83,7 +79,7 @@ Only templates may safely appear between the type definition and the hooks. If a
 - **Zero-length allocations**: Guard against `alloc(0)` in constructors and `=copy`. Only allocate when length is positive. `alloc(0)` may return nil or an invalid pointer.
 - **Thread-aware allocation**: When a refcounted payload may cross thread boundaries, switch between `allocShared`/`deallocShared` and `alloc`/`dealloc` using `when compileOption("threads")`.
 
-## 3. Workflow
+## Workflow
 
 ### Step 1: Classify the ownership model
 
@@ -122,7 +118,7 @@ Test these scenarios for every custom-hook type:
 - Sink from temporaries
 - Zero-length initialization (if the type has constructors)
 
-## 4. Common Mistakes
+## Common Mistakes
 
 | Mistake | Why it is wrong |
 |---------|-----------------|
@@ -139,7 +135,7 @@ Test these scenarios for every custom-hook type:
 | Custom error string in `{.error: "msg"}` on `=copy` | The compiler ignores custom error messages. Use bare `{.error.}`. |
 | Skipping `=dup` on a move-only type | Add `=dup {.error.}`. Without it the compiler synthesizes one that produces nil instead of erroring. |
 
-## 5. References
+## References
 
 - `references/move_only_owner.md` — exclusive resource ownership, no copy allowed
 - `references/deep_owning_container.md` — manual allocation with deep copy

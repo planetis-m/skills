@@ -5,8 +5,6 @@ description: Write and run deterministic Nim tests, including isolated test file
 
 # Nim Testing
 
-Write deterministic Nim tests with direct assertions, isolated test files, multi-configuration runs, and optional AddressSanitizer checks.
-
 ## Rules
 
 ### Use `block`-based tests with `doAssert`
