@@ -9,22 +9,31 @@ description: Use Atlas to initialize Nim projects, install or update Atlas-manag
 
 ## Project State
 
-- Treat either root `atlas.config` or `<deps>/atlas.config` as Atlas config. Atlas prefers root `atlas.config` when present, but `atlas init` creates `deps/atlas.config` by default.
+- Treat either root `atlas.config` or `<deps>/atlas.config` as Atlas config. Atlas prefers root
+  `atlas.config` when present, but `atlas init` creates `deps/atlas.config` by default.
 - Use `atlas init` from the project root to initialize Atlas state.
-- Use `atlas init --deps=DIR` or `atlas --deps=DIR init` when the project intentionally uses a dependency directory other than `deps/`.
-- After initialization, inspect `<deps>/atlas.config`; the default config records `deps`, `nameOverrides`, `urlOverrides`, `pkgOverrides`, `plugins`, `resolver`, and `graph`.
-- Do not assume `atlas init` creates `nim.cfg`. Atlas has code paths that patch `nim.cfg` when dependency operations need compiler paths.
+- Use `atlas init --deps=DIR` or `atlas --deps=DIR init` when the project intentionally uses a
+  dependency directory other than `deps/`.
+- After initialization, inspect `<deps>/atlas.config`; the default config records `deps`,
+  `nameOverrides`, `urlOverrides`, `pkgOverrides`, `plugins`, `resolver`, and `graph`.
+- Do not assume `atlas init` creates `nim.cfg`. Atlas has code paths that patch `nim.cfg` when
+  dependency operations need compiler paths.
 
 ## Commands
 
 - Use `atlas use <url|pkgname>` to add a dependency.
-- Use `atlas install` when the Nimble file already contains requirements and Atlas should materialize the dependency graph.
-- Use `atlas update [filter]` to refresh dependency refs. Prefer a filter when only one dependency needs an update.
-- Use `atlas link <path>` only for local project linking tasks; be prepared to inspect generated link files and the linked project's dependency graph state.
+- Use `atlas install` when the Nimble file already contains requirements and Atlas should
+  materialize the dependency graph.
+- Use `atlas update [filter]` to refresh dependency refs. Prefer a filter when only one dependency
+  needs an update.
+- Use `atlas link <path>` only for local project linking tasks; be prepared to inspect generated
+  link files and the linked project's dependency graph state.
 - Use `atlas pin [atlas.lock]` to pin current dependency checkouts.
 - Use `atlas rep [atlas.lock]` to replay a lockfile. `atlas replay` and `atlas reproduce` are aliases.
-- Use `atlas --noexec rep [atlas.lock]` when replay should avoid build actions that may run arbitrary code.
-- Use `atlas env <nimversion>` for project-local Nim environments, for example `atlas env 1.6.12` or `atlas env devel`.
+- Use `atlas --noexec rep [atlas.lock]` when replay should avoid build actions that may run
+  arbitrary code.
+- Use `atlas env <nimversion>` for project-local Nim environments, for example `atlas env 1.6.12`
+  or `atlas env devel`.
 
 ## Package Names, URLs, And Indexes
 
@@ -39,10 +48,12 @@ description: Use Atlas to initialize Nim projects, install or update Atlas-manag
 | `srht:user/repo` or `sourcehut:user/repo` | `https://git.sr.ht/~user/repo` |
 | `cb:user/repo`, `cberg:user/repo`, or `codeberg:user/repo` | `https://codeberg.org/user/repo` |
 
-- Atlas downloads `packages.json` into the package cache by default, using `packages.nim-lang.org` with GitHub fallback.
+- Atlas downloads `packages.json` into the package cache by default, using `packages.nim-lang.org`
+  with GitHub fallback.
 - Use `--packagesRepo` only when the workflow needs the full `nim-lang/packages` git repository behavior.
 - Use `--forceGitToHttps` when dependency URLs need `git://` rewritten to `https://`.
-- If a package name or URL resolves incorrectly, fix `nameOverrides`, `urlOverrides`, or `pkgOverrides` in `<deps>/atlas.config` instead of editing generated paths by hand.
+- If a package name or URL resolves incorrectly, fix `nameOverrides`, `urlOverrides`, or
+  `pkgOverrides` in `<deps>/atlas.config` instead of editing generated paths by hand.
 
 ## Generated nim.cfg Paths
 
@@ -57,22 +68,26 @@ description: Use Atlas to initialize Nim projects, install or update Atlas-manag
 
 - Inspect the Atlas section in `nim.cfg` when imports fail.
 - Preserve user-written content outside the Atlas begin/end section.
-- Do not hand-edit generated `--path` entries as the first fix. Correct the dependency graph, package metadata, or config overrides instead.
+- Do not hand-edit generated `--path` entries as the first fix. Correct the dependency graph,
+  package metadata, or config overrides instead.
 
 ## Resolution And Overrides
 
 - Atlas supports `MinVer`, `SemVer`, and `MaxVer` resolver algorithms.
 - The generated default config uses `SemVer`.
-- Set resolver policy in `<deps>/atlas.config` or with `--resolver=minver|semver|maxver` when the task requires a specific policy.
+- Set resolver policy in `<deps>/atlas.config` or with `--resolver=minver|semver|maxver` when the
+  task requires a specific policy.
 - Use `nameOverrides` for package-name-to-URL mapping.
 - Use `urlOverrides` for URL rewrite rules.
 - Use `pkgOverrides` when multiple URLs conflict for the same package shortname.
-- Keep overrides in Atlas config so future `install`, `use`, `update`, and `rep` commands remain repeatable.
+- Keep overrides in Atlas config so future `install`, `use`, `update`, and `rep` commands remain
+  repeatable.
 
 ## Features
 
 - Atlas supports Nimble `feature` statements.
-- Pass feature flags explicitly with `--feature=<feature>`. Pass multiple `--feature` options when multiple features are required, or use `--features=<list>` for a comma- or space-separated list.
+- Pass feature flags explicitly with `--feature=<feature>`. Pass multiple `--feature` options when
+  multiple features are required, or use `--features=<list>` for a comma- or space-separated list.
 - Use `--allFeatures` only when every declared feature should be enabled.
 - Use `--keepFeatures` or `-k` when the command should reuse feature defines from the current `nim.cfg`.
 - Feature request flags populate runtime context; they are not saved as fields in `atlas.config`.
@@ -98,17 +113,21 @@ description: Use Atlas to initialize Nim projects, install or update Atlas-manag
 1. Inspect the project root.
    Look for `*.nimble`, `nim.cfg`, `atlas.lock`, `deps/`, and any custom dependency directory.
 2. Locate Atlas config.
-   Check root `atlas.config` first, then `<deps>/atlas.config`; if `--deps` or `--confdir` is in use, inspect that configured location.
+   Check root `atlas.config` first, then `<deps>/atlas.config`; if `--deps` or `--confdir` is in
+   use, inspect that configured location.
 3. Choose the Atlas command.
-   Use `init`, `use`, `install`, `update`, `link`, `pin`, `rep`, or `env` according to the task. Run commands from the project root unless `--project=path` is intentional.
+   Use `init`, `use`, `install`, `update`, `link`, `pin`, `rep`, or `env` according to the task.
+   Run commands from the project root unless `--project=path` is intentional.
 4. Check policy before changing dependencies.
    Read resolver, overrides, plugins, feature needs, lockfile state, and existing Nimble requirements.
 5. Run the smallest Atlas operation.
    Use filters for targeted updates and `--noexec` when arbitrary build actions should not run.
 6. Verify generated state.
-   Inspect `<deps>/atlas.config`, `project.nimble`, `nim.cfg`, and `atlas.lock` as applicable. Compile or test the smallest Nim target that imports the affected package.
+   Inspect `<deps>/atlas.config`, `project.nimble`, `nim.cfg`, and `atlas.lock` as applicable.
+   Compile or test the smallest Nim target that imports the affected package.
 7. Preserve reproducibility.
-   If the dependency set must remain stable, run `atlas pin` after successful setup and keep the lockfile with the project when that is the repository policy.
+   If the dependency set must remain stable, run `atlas pin` after successful setup and keep the
+   lockfile with the project when that is the repository policy.
 
 ## Task Examples
 
@@ -125,8 +144,8 @@ description: Use Atlas to initialize Nim projects, install or update Atlas-manag
 | Editing generated `nim.cfg` paths first | Atlas can regenerate that section; fix config, package metadata, or dependency resolution instead. |
 | Enabling plugins without inspection | Plugins are NimScript files and may execute external commands. |
 
-# References
+## References
 
-- `references/start_project.md`: Start an Atlas project and add a package dependency.
-- `references/custom_deps_and_overrides.md`: Use a custom deps directory and Atlas override fields.
-- `references/features_and_replay.md`: Run feature-aware installs and replay pinned dependencies.
+- `references/start_project.md` — Atlas adoption: project setup, dependency addition, and compile flow.
+- `references/custom_deps_and_overrides.md` — Custom dependency directories and URL overrides.
+- `references/features_and_replay.md` — Optional features and lockfile replay commands.

@@ -352,8 +352,8 @@ llvm-cov show ./my_fuzzer -instr-profile=fuzz.profdata --format=html \
 | Not bounding input size with `-max_len` | Unbounded inputs can cause memory exhaustion or slow runs. |
 | Catching `except Exception` in the harness | `except Exception` catches `Defect` subclasses including `IndexDefect` and `OverflowDefect`, masking real bugs. Bare `except` (same as `except CatchableError`) does **not** catch `Defect`. Catch only specific expected error types like `ValueError`. Compile with `--panics:on` instead of manually catching Defect. |
 
-# References
+## References
 
-- `references/simple_byte_target.md` — Minimum working fuzz target for raw bytes
-- `references/structure_aware_fuzzing.md` — Custom mutator for length-prefixed frames
-- `references/protocol_fuzzer.md` — HTTP parser harness excerpt with error triage
+- `references/simple_byte_target.md` — A raw-byte harness with build configuration, seed, and run
+  command.
+- `references/structure_aware_fuzzing.md` — A length-prefixed custom mutator for stalled coverage.

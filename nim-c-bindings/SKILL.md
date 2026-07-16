@@ -94,6 +94,7 @@ description: Bind C libraries to Nim and make them build reliably across Linux, 
 
 ## References
 
-- `references/raw_binding.md` — Complete opaque-handle and by-value struct binding
-- `references/ci.yml` — Cross-platform CI workflow (Linux, macOS, Windows) with Nim, Atlas, and vcpkg
-- `references/release.yml` — Tagged release workflow producing per-platform archives and a draft GitHub Release
+- `references/raw_binding.md` — Mapping an opaque handle and by-value C struct.
+- `references/ci.yml` — Building a C-dependent project on Linux, macOS, and Windows with Nim,
+  Atlas, and vcpkg.
+- `references/release.yml` — Publishing tagged cross-platform archives in a draft release.

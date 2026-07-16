@@ -174,5 +174,6 @@ Then: `nim c -d:addressSanitizer -r tests/tester.nim`
 
 ## References
 
-- `references/block_test_pattern.md` — Full worked example with project layout, test files, and runner
-- `references/ci_github_actions.md` — GitHub Actions CI workflow for Linux, macOS, and Windows
+- `references/block_test_pattern.md` — An isolated test layout with block tests, runner, and
+  commands.
+- `references/ci_github_actions.md` — Cross-platform GitHub Actions CI with Linux ASan.

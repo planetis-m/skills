@@ -62,6 +62,7 @@ description: Write clear, consistent Nim code in a simple stdlib-aligned style, 
 
 - Prefer compact wrapped calls over one-argument-per-line call blocks.
 - Use UFCS when it reads like an accessor.
+- Write `typeof(x)`, not the historical `type(x)`.
 - Use `let` by default.
 - Use `var` only for values that mutate.
 - Keep local declarations close to first use.
@@ -147,7 +148,9 @@ See `references/multiline_strings.md`.
 | Turning every branch into an early `return` in a multi-step proc | It makes the normal path harder to scan. |
 | Using `continue` | A structured branch keeps the loop invariant visible. |
 
-# References
+## References
 
-- `references/core_patterns.md`: Simple default patterns for imports, callable kinds, wrapping, locals, and constructors.
-- `references/multiline_strings.md`: Triple-quoted multiline string patterns: leading newline, concatenation around interpolated values, and `dedent`.
+- `references/core_patterns.md` — General style patterns for imports, callable kinds, wrapping,
+  locals, and constructors.
+- `references/multiline_strings.md` — Whitespace-preserving triple-quoted strings, joins, and
+  dedenting.

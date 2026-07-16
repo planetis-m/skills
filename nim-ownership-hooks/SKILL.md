@@ -68,8 +68,8 @@ Only templates may safely appear between the type definition and the hooks. If a
 
 ### Move semantics
 
-- Use `ensureMove(x)` to transfer ownership. It only compiles when the source is last-use. If the compiler rejects it, restructure your code until it compiles — do not fall back to `move` as a first resort. After `ensureMove`, the source is dead: any use is a compile error.
-- Use `move(x)` only when restructuring is impractical. `move` always compiles but the source is not consumed — using it afterward compiles and silently reads the moved-from (default) value.
+- For an explicit transfer that must not copy, use `ensureMove(x)`; it fails at compile time if the move cannot be proved.
+- Use `move(x)` only to force a move that last-use analysis cannot prove.
 - `sink` parameters are affine, not linear: the callee may consume the value once, or not at all.
 - Object and tuple fields are separate entities for sink last-use analysis.
 - When the compiler cannot prove a sink argument is last use, it inserts `=copy` or `=dup` before passing.
@@ -130,14 +130,15 @@ Test these scenarios for every custom-hook type:
 | Custom `=sink` when synthesized is fine | Adds unnecessary complexity with no benefit. |
 | `copyMem` in `=sink` or `=dup` | Bypasses child hook semantics and breaks the ownership chain for elements that have their own hooks. |
 | Missing zero-length guard | `alloc(0)` may return nil; subsequent indexing crashes. |
-| Using `move` when `ensureMove` would compile | Source is not consumed — using it afterward compiles and silently reads the default value. |
+| Using `move` when `ensureMove` would compile | Later reads of the source still compile and silently return its default value. |
 | `alloc` in multi-threaded code | Must use `allocShared`/`deallocShared` instead. |
 | Custom error string in `{.error: "msg"}` on `=copy` | The compiler ignores custom error messages. Use bare `{.error.}`. |
 | Skipping `=dup` on a move-only type | Add `=dup {.error.}`. Without it the compiler synthesizes one that produces nil instead of erroring. |
 
 ## References
 
-- `references/move_only_owner.md` — exclusive resource ownership, no copy allowed
-- `references/deep_owning_container.md` — manual allocation with deep copy
-- `references/shared_refcounted.md` — refcounted handle (separate counter + generic SharedPtr)
-- `references/custom_sink.md` — when and how to write a custom `=sink`
+- `references/move_only_owner.md` — Hooks for exclusive ownership with copying forbidden.
+- `references/deep_owning_container.md` — Destroy, copy, and duplicate hooks for raw storage with
+  independent copies.
+- `references/shared_refcounted.md` — Separate-counter and generic `SharedPtr` patterns for shared
+  ownership.

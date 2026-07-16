@@ -50,6 +50,6 @@ description: Document exported Nim modules and APIs with doc comments that `nim 
 
 ## References
 
-- `references/module_docs.md` — Module doc patterns (line and block syntax)
-- `references/proc_and_type_docs.md` — Proc, type, enum, const, and field doc placement
-- `references/runnable_examples.md` — runnableExamples placement and parameterized flags
+- `references/module_docs.md` — Line and block forms for module docs and top-level examples.
+- `references/proc_and_type_docs.md` — Doc placement for exported declarations and fields.
+- `references/runnable_examples.md` — `runnableExamples` forms with placement and compiler flags.

@@ -75,10 +75,10 @@ Common guard questions a reproducer can answer:
 
 - Does `except CatchableError` catch this exception? `Defect` subclasses
   (`IndexDefect`, `OverflowDefect`, `AssertionDefect`) are not caught by it.
-- Does `-d:danger` change the behavior? `assert` is compiled out; `doAssert`
-  is not.
-- Does a bounds check, limit, range type, or parser guard actually block the
-  input shape you are testing?
+- Does `-d:danger` change the behavior? `assert` and range checks are disabled;
+  `doAssert` remains active.
+- Does a bounds check, limit, range conversion, or parser guard actually block
+  the input shape you are testing?
 - Does a consumed-length parser leave trailing input unvalidated?
 
 ## Use Compiler And Runtime As Primary Evidence
@@ -181,6 +181,6 @@ speculative ones.
 | Treating `assert` as a reliable guard | `assert` is compiled out in `-d:danger`; use `doAssert` in tests. |
 | Assigning numerical confidence scores | Numbers add false precision without improving the analysis. |
 
-# References
+## References
 
 No reference files.

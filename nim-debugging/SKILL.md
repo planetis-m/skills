@@ -155,8 +155,9 @@ exit distinguishes detected errors in automated checks.
 | Adding `move` merely because `--expandArc` shows a copy | `move` changes ownership semantics and must be safe at last use |
 | Using GDB for routine Nim debugging | The project uses faster Nim-aware evidence sources instead |
 
-# References
+## References
 
-- `references/stack_trace_diagnosis.md` — trace a failure to the first invalid value
-- `references/memory_sanitizers.md` — complete ASan and Valgrind commands
-- `references/arc_optimization.md` — interpret ownership expansion and apply `move` safely
+- `references/stack_trace_diagnosis.md` — Boundary instrumentation for finding the first bad value
+  behind a crash.
+- `references/memory_sanitizers.md` — ASan and Valgrind commands for unsafe access and leaks.
+- `references/arc_optimization.md` — `expandArc` comparison for unexpected ownership copies.

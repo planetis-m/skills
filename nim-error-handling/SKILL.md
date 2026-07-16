@@ -14,11 +14,13 @@ description: Design clear Nim error-handling flows; when to raise exceptions vs 
 - Use `bool` with a `var` parameter only when filling or mutating caller-owned storage is part of the API.
 - Convert per-item failures into structured outcomes at the batch boundary. Keep intermediate steps exception-based.
 
-### Validate at Boundaries
+### Add Only Real Failure Paths
 
-- Add a failure path only when the condition prevents the operation from meeting its contract.
-- Use range types only as parameters.
-- Do not use range conversions; they raise `Defect` and silently accept invalid values under `-d:danger`.
+- Read what the current operation promises and how each called API reports failure.
+- If a successful call guarantees valid output, do not add another nil, size, or range check.
+- If a condition breaks no documented promise, remove the check and document the valid behavior.
+- Report failure when the result cannot safely satisfy its API or the operation cannot meet its documented promise.
+- If an operation requires a stronger guarantee than the API it calls, validate that guarantee in that operation.
 
 ### Place Boundaries
 
@@ -33,7 +35,8 @@ description: Design clear Nim error-handling flows; when to raise exceptions vs 
 - Put child exception types before their parents in `except` branches.
 - Catch `CatchableError` only when the boundary handles every recoverable error. Do not catch bare `Exception`.
 - Add a custom exception only when callers handle it differently. Derive it from the closest existing `CatchableError` subtype.
-- Use `Defect` only when a contract failure proves an internal invariant is broken.
+- Do not use `Defect` for recoverable failures; it represents a programming bug and is not caught by `CatchableError`.
+- Do not use range conversions for recoverable validation; invalid values raise `RangeDefect`.
 
 ### Translate and Inspect Errors
 
@@ -48,18 +51,22 @@ description: Design clear Nim error-handling flows; when to raise exceptions vs 
 
 ## Workflow
 
-1. **Define the operation's postcondition and trust boundaries.**
-2. **Classify only conditions that prevent that postcondition.**
-3. **Place catch boundaries** only where the handler can recover, translate, or record the failure.
-4. **Enforce contracts.** Add `{.raises: [].}` to procs that must not raise.
+1. **Read the contracts.** Note what this operation promises, how called APIs report failure, and what they guarantee on success.
+2. **Decide whether failure is needed.** Name the documented promise that the condition would break. If there is none, remove the check.
+3. **Place the decision.** Document valid behavior as success, or report failure in the first operation whose promise is broken.
+4. **Place catch boundaries.** Catch only where the handler can recover, translate, or record the failure.
+5. **Enforce non-raising contracts.** Add `{.raises: [].}` only to procs that must not raise.
 
 ## Common Mistakes
 
 | Mistake | Why it is wrong |
 |---------|-----------------|
-| Parent `except` before child | Nim dispatches first-match, so the child branch is unreachable. Put specific types first. |
-| Using `except Exception` to catch all errors | It catches `Defect` too, masking programming bugs as recoverable. Catch `CatchableError` instead. |
+| Parent `except` before child | First-match dispatch makes the child handler unreachable. |
+| Catching bare `Exception` | Also catches `Defect` and can hide programming bugs. |
+| Rechecking guaranteed output | Adds dead branches and can contradict the lower-level API. |
+| Rejecting allowed behavior | Silently narrows the operation's contract. |
 
 ## References
 
-- Read `references/batch_preview_boundary.md` when a batch must record per-item failures but abort if its reporting path fails.
+- `references/batch_preview_boundary.md` — Per-item batch failures with reporting failures allowed
+  to escape.

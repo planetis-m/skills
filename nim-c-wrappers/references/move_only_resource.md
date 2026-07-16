@@ -35,6 +35,6 @@ proc newHandle*(width, height: int): Handle =
 
 - `{.error.}` on `=copy` and `=dup` prevents accidental double-free at compile time.
 - `{.error.}` on `=sink` prevents ownership transfer after construction.
-- Use `ensureMove()` to initialize a new owner from an existing variable.
+- Use `ensureMove(x)` to initialize a move-only owner from an existing variable when copying must be rejected.
 - `=wasMoved` must nil out the raw pointer so `=destroy` is a no-op on moved-from objects.
 - Raise immediately on nil from the C create function.

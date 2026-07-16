@@ -10,29 +10,32 @@ description: Design clear public Nim APIs for libraries and modules, including e
 ### Public shape
 
 - Prefer plain `object` types for public data models.
-- Use `ref object` only when identity, aliasing, shared mutation, graph structure, or handle lifetime is part of the contract.
-- Export one primary public representation per concept. Add paired value/ref
-  APIs only when both forms are part of the contract.
-- Prefer procs, overloads, generics, and iterators. Do not default to methods or runtime dispatch for ordinary APIs.
+- Use `ref object` only when identity, aliasing, shared mutation, graph structure, or handle
+  lifetime is part of the contract.
+- Export one primary public representation per concept. Add paired value/ref APIs only when both
+  forms are part of the contract.
+- Prefer procs, overloads, generics, and iterators. Do not default to methods or runtime dispatch
+  for ordinary APIs.
 - Use named `object` types for public semantic data.
 - Use tuples only for local glue or iterator yields such as `(key, val)`.
-- Reuse stdlib names when the behavior matches: `len`, `find`,
-  `contains`/`hasKey`, `[]`, `[]=`, `items`/`mitems`, `pairs`/`mpairs`,
-  `add`, `del`, `clear`, `incl`/`excl`, and `push`/`pop`.
-- When indexed removal must preserve sequence order, use `delete(index)`, not
-  `del(index)`.
-- Use `find` for an index or position result. Use `contains` or `hasKey` for
-  boolean membership.
-- For collection-like types, expose `items` and `pairs`. Add `mitems` and
-  `mpairs` only when callers may safely mutate yielded values.
+- Reuse stdlib names when the behavior matches: `len`, `find`, `contains`/`hasKey`, `[]`, `[]=`,
+  `items`/`mitems`, `pairs`/`mpairs`, `add`, `del`, `clear`, `incl`/`excl`, and `push`/`pop`.
+- When indexed removal must preserve sequence order, use `delete(idx)`, not `del(idx)`.
+- Use `find` for an index or position result. Use `contains` or `hasKey` for boolean membership.
+- For collection-like types, expose `items` and `pairs`. Add `mitems` and `mpairs` only when
+  callers may safely mutate yielded values.
 - For comparable types, define `==`, `<` and `<=`. Do not define `!=`, `>`, or `>=`; Nim derives them.
 
 ### Contracts
 
-- Prefer range types for constrained public parameters. Use base types for stored fields.
+- Use range types for constrained public parameters; store their values in the underlying type
+  (`int` for `Natural` or `Positive`).
+- Pass arguments directly to range parameters; conversion is implicit, so do not write `Positive(x)`.
+- Use `static[T]` in public APIs only when callers must supply a compile-time constant.
+- Bare `typedesc` parameters may name different types; share `T` across `typedesc[T]` parameters
+  when they must match.
 - Use `distinct` when two values share a base type but must not mix.
-- If a public type can be used as a table or set key, define `hash` consistent
-  with `==`.
+- If a public type can be used as a table or set key, define `hash` consistent with `==`.
 - Use `func` for pure query operations when purity is part of the public contract.
 - Use `{.raises: [].}` when a proc must not raise. Leave raising procs unannotated.
 
@@ -41,38 +44,40 @@ description: Design clear public Nim APIs for libraries and modules, including e
 - Use `initX()` for value types that copy by value.
 - Use `newX()` for ref types and for value types with reference semantics.
 - Use one `toX()` name for common conversions. Overload on input type.
-- Choose sequence-like batch parameters by required operation:
-  `openArray[T]` for read-only traversal, `var openArray[T]` for fixed-length
-  element mutation, and `var seq[T]` for resizing or replacement.
+- Choose sequence-like batch parameters by required operation: `openArray[T]` for read-only
+  traversal, `var openArray[T]` for fixed-length element mutation, and `var seq[T]` for resizing
+  or replacement.
 - Keep the zero-argument path simple with sensible defaults.
 
 ### Parameter ownership
 
-- Use `T` when the caller's variable stays unchanged, `var T` when the proc changes it, and `sink T` when the proc takes ownership. Use `lent T` only for borrowed returns.
-- Pass sink arguments normally. Nim moves proven last-use values and copies others. Use `ensureMove(x)` only to reject a copy at compile time.
+- Use `T` when the caller's variable stays unchanged, `var T` when the proc changes it, and
+  `sink T` when the proc takes ownership. Use `lent T` only for borrowed returns.
+- Pass sink arguments normally; Nim moves proven last-use values and copies otherwise. Use
+  `ensureMove(x)` only when copying must be a compile-time error.
 
 ### Lookup surface
 
 - Separate required lookup from optional lookup.
 - A required lookup raises one specific catchable exception. It does not return a silent default.
-- Use `contains` or `hasKey` for membership checks and `getOrDefault` for
-  explicit fallback values.
-- If several accessors fail the same way, route the failure through one private `{.noinline, noreturn.}` helper.
+- Use `contains` or `hasKey` for membership checks and `getOrDefault` for explicit fallback values.
+- If several accessors fail the same way, route the failure through one private
+  `{.noinline, noreturn.}` helper.
 
 ### Borrowed and mutable access
 
 - Use `lent T` for read accessors that return storage owned by the receiver.
-- Return `var T` only for deliberate mutable views. If changes require
-  validation or related updates, expose mutation procs instead.
+- Return `var T` only for deliberate mutable views. If changes require validation or related
+  updates, expose mutation procs instead.
 - In `lent` and `var` accessors, return directly from storage. Do not route through a temp local.
 
 ### Public boundary
 
 - Export only the stable surface. Keep helpers private.
 - Use descriptive public names.
-- In user code, gate version-specific API with `when (NimMajor, NimMinor) >= (x, y)`. Do not use stdlib-internal `{.since.}`.
-- Keep template lookup escape hatches such as `withValue` secondary to the
-  main lookup surface.
+- In user code, gate version-specific API with `when (NimMajor, NimMinor) >= (x, y)`. Do not use
+  stdlib-internal `{.since.}`.
+- Keep template lookup escape hatches such as `withValue` secondary to the main lookup surface.
 
 ## Workflow
 
@@ -85,7 +90,9 @@ description: Design clear public Nim APIs for libraries and modules, including e
 4. Design the lookup surface.
    Provide one strict path for required data and one explicit safe path for optional data.
 5. Choose parameter modes and borrowed access.
-   Use `T` when the caller's variable stays unchanged, `var T` when the proc changes it, `sink T` when the proc takes ownership, and `lent T` to return a borrow. Use mutation procs when changes need validation or related updates.
+   Use `T` when the caller's variable stays unchanged, `var T` when the proc changes it, `sink T`
+   when the proc takes ownership, and `lent T` to return a borrow. Use mutation procs when changes
+   need validation or related updates.
 6. Verify the contract.
    Compile public examples. Exercise each mutation, ownership, and failure path.
 
@@ -106,13 +113,12 @@ description: Design clear public Nim APIs for libraries and modules, including e
 
 ## References
 
-- `references/representation_and_construction.md` — value data, shared identity,
-  and `initX`/`newX` construction
-- `references/lookup_and_mutation.md` — required lookup, optional membership,
-  borrowed reads, and controlled mutation
-- `references/parameter_and_result_shapes.md` — distinct identities, options,
-  constrained parameters, and semantic results
-- `references/parameter_ownership.md` — read, mutation, resizing, sink, and
-  borrowed-return parameter shapes
-- `references/template_usage.md` — template patterns where a `proc` cannot
-  substitute: scoped cleanup, caller-named access, and lazy evaluation
+- `references/representation_and_construction.md` — Choosing value or reference semantics with
+  `initX` and `newX` construction.
+- `references/lookup_and_mutation.md` — Collection access through required, optional, borrowed,
+  and controlled-mutation paths.
+- `references/parameter_and_result_shapes.md` — Domain IDs, related options, constrained
+  parameters, and named results in one public API.
+- `references/parameter_ownership.md` — Choosing `openArray`, `var`, `sink`, and `lent` parameters.
+- `references/template_usage.md` — Templates for scoped cleanup, caller-named access, and lazy
+  evaluation that a proc cannot express.

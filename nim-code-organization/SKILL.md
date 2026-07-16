@@ -23,6 +23,8 @@ Choose the smallest structure that exposes the real workflow.
 
 - Extract a helper when it names a meaningful step, is reused, isolates a
   contract, or makes an invariant easier to state.
+- To share an implementation across compile-time variants, parameterize one
+  helper with `static[bool]` or a static enum and branch with `when`.
 - Keep a short, one-use sequence in its driver when extraction would only move
   lines elsewhere.
 - Put helpers at module scope when several phases use them or they stand on
@@ -99,9 +101,9 @@ Choose the smallest structure that exposes the real workflow.
 | Exporting orchestration helpers or state by default | It turns implementation details into a public compatibility obligation |
 | Starting with `ref object` for locally owned state | It introduces aliasing and identity that the workflow does not require |
 
-# References
+## References
 
-- `references/orchestration_pattern.md` — choose between local closure state
-  and explicit multi-step state
-- `references/parser_state_pattern.md` — incremental state object with
-  top-level mutating procs
+- `references/orchestration_pattern.md` — Local versus explicit state for operations that share
+  invariants.
+- `references/parser_state_pattern.md` — A scanner object for incremental cursor and lifecycle
+  state.

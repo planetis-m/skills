@@ -105,8 +105,10 @@ Struct types: `object` in C order. Fixed arrays: `array[N, T]`. Pointer+length: 
 
 ## References
 
-- `references/move_only_resource.md` — Complete move-only resource wrapper with destructor hooks
-- `references/rc_resource.md` — Reference-counted (shared ownership) resource wrapper
-- `references/callback_pattern.md` — C callback pattern using direct pointer casting
-- `references/enum_and_bitflags.md` — Typed aliases for enums and distinct types for bitflags
-- `references/module_layout.md` — Shared-types module plus selective ergonomic re-exports
+- `references/move_only_resource.md` — A move-only wrapper for one owner of a C handle.
+- `references/rc_resource.md` — A reference-counted wrapper for shared C resource ownership.
+- `references/callback_pattern.md` — C callbacks with userdata, captured Nim state, and lifetime
+  management.
+- `references/enum_and_bitflags.md` — Distinct-integer wrappers for non-contiguous enums and
+  bitwise flags.
+- `references/module_layout.md` — Separating raw FFI from an ergonomic API in two modules.

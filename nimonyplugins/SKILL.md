@@ -132,9 +132,10 @@ Use the named protocol helpers to access template and for-loop inputs.
 
 ## References
 
-- `references/template_plugin.md` — generate an expression from literal arguments
-- `references/replacer_api.md` — rewrite a template call while reusing its argument
-- `references/for_loop_plugin.md` — expand an already typed loop body
-- `references/module_plugin.md` — selectively rewrite a complete typed module
-- `references/type_plugin.md` — validate a module using triggering type symbols
-- `references/generated_symbols.md` — introduce a collision-free local symbol
+- `references/template_plugin.md` — A template plugin that generates an expression from literal
+  arguments.
+- `references/replacer_api.md` — A selective call rewrite that preserves most input children.
+- `references/for_loop_plugin.md` — A for-loop plugin that expands an already typed body.
+- `references/module_plugin.md` — A module plugin that rewrites an already typed module.
+- `references/type_plugin.md` — A type plugin for validation or rewrites driven by selected types.
+- `references/generated_symbols.md` — `genSym` definition and use for collision-free locals.
