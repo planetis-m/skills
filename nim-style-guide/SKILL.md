@@ -73,7 +73,7 @@ description: Write clear, consistent Nim code in a simple stdlib-aligned style, 
 - Use `var` only for values that mutate.
 - Keep local declarations close to first use.
 - Keep public and reusable types at module scope.
-- Declare fields of the same type together, `x, y: int`.
+- Group related fields with the same type when it improves readability.
 - Prefer object constructors (`TypeName(field: value)`) over field-by-field
   assignment into an uninitialized `result`.
 - Omit fields that should keep their declared defaults.

@@ -46,6 +46,8 @@ description: Design clear public Nim APIs for libraries and modules, including e
 - Use `initX()` for value types that copy by value.
 - Use `newX()` for ref types and for value types with reference semantics.
 - Use one `toX()` name for common conversions. Overload on input type.
+- Use `openArray[T]` only at a public boundary that must accept both arrays and seqs.
+  When you control the callers, name the concrete type (`array[N, T]` or `seq[T]`).
 - Choose sequence-like batch parameters by required operation: `openArray[T]` for read-only
   traversal, `var openArray[T]` for fixed-length element mutation, and `var seq[T]` for resizing
   or replacement.
