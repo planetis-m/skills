@@ -8,9 +8,9 @@ type
   Sku* = distinct string
 
   Product* = object
-    productName: string
-    productLabels: seq[string]
-    productStock: int
+    name: string
+    labels: seq[string]
+    stock: int
 
   Inventory* = object
     ids: seq[Sku]
@@ -22,101 +22,80 @@ proc hash*(sku: Sku): Hash {.borrow.}
 
 proc initProduct*(name: string; labels: openArray[string];
     stock: Natural): Product =
-  result = Product(productName: name, productStock: stock)
+  result = Product(name: name, stock: stock)
   for label in labels:
-    result.productLabels.add label
+    result.labels.add label
 
-func name*(product: Product): string =
-  product.productName
+func name*(p: Product): string {.inline.} =
+  p.name
 
-func stock*(product: Product): int =
-  product.productStock
+func stock*(p: Product): int {.inline.} =
+  p.stock
 
-proc labels*(product: Product): lent seq[string] =
-  product.productLabels
+proc labels*(p: Product): lent seq[string] {.inline.} =
+  p.labels
 
 proc raiseMissing(sku: Sku) {.noinline, noreturn.} =
   raise newException(KeyError, "unknown sku: " & $sku)
 
-func find*(inventory: Inventory; sku: Sku): int =
-  for idx, existing in inventory.ids:
+func find*(inv: Inventory; sku: Sku): int =
+  for idx, existing in inv.ids:
     if existing == sku:
       return idx
   result = -1
 
-func contains*(inventory: Inventory; sku: Sku): bool =
-  inventory.find(sku) >= 0
+func contains*(inv: Inventory; sku: Sku): bool {.inline.} =
+  inv.find(sku) >= 0
 
-proc getOrDefault*(inventory: Inventory; sku: Sku;
+proc getOrDefault*(inv: Inventory; sku: Sku;
     default: Product): Product =
-  let idx = inventory.find(sku)
+  let idx = inv.find(sku)
   if idx >= 0:
-    inventory.products[idx]
+    result = inv.products[idx]
   else:
-    default
+    result = default
 
-proc add*(inventory: var Inventory; sku: Sku; product: sink Product) =
-  if inventory.contains(sku):
+proc add*(inv: var Inventory; sku: Sku; p: sink Product) =
+  if inv.contains(sku):
     raise newException(ValueError, "duplicate sku")
-  inventory.ids.add sku
-  inventory.products.add product
+  inv.ids.add sku
+  inv.products.add p
 
-proc del*(inventory: var Inventory; sku: Sku) =
-  let idx = inventory.find(sku)
+proc del*(inv: var Inventory; sku: Sku) =
+  let idx = inv.find(sku)
   if idx >= 0:
-    inventory.ids.delete idx
-    inventory.products.delete idx
+    inv.ids.delete idx
+    inv.products.delete idx
 
-proc clear*(inventory: var Inventory) =
-  inventory.ids.setLen 0
-  inventory.products.setLen 0
+proc clear*(inv: var Inventory) =
+  inv.ids.setLen 0
+  inv.products.setLen 0
 
-proc product*(inventory: Inventory; sku: Sku): lent Product =
-  let idx = inventory.find(sku)
+proc product*(inv: Inventory; sku: Sku): lent Product =
+  let idx = inv.find(sku)
   if idx < 0:
     raiseMissing(sku)
-  result = inventory.products[idx]
+  result = inv.products[idx]
 
-proc labels*(inventory: var Inventory; sku: Sku): var seq[string] =
-  let idx = inventory.find(sku)
+proc labels*(inv: var Inventory; sku: Sku): var seq[string] =
+  let idx = inv.find(sku)
   if idx < 0:
     raiseMissing(sku)
-  result = inventory.products[idx].productLabels
+  result = inv.products[idx].labels
 
-proc setStock*(inventory: var Inventory; sku: Sku; stock: Natural) =
-  let idx = inventory.find(sku)
+proc setStock*(inv: var Inventory; sku: Sku; stock: Natural) =
+  let idx = inv.find(sku)
   if idx < 0:
     raiseMissing(sku)
-  inventory.products[idx].productStock = stock
+  inv.products[idx].stock = stock
 
-iterator items*(inventory: Inventory): lent Product =
-  for product in inventory.products:
-    yield product
+iterator items*(inv: Inventory): lent Product =
+  for p in inv.products:
+    yield p
 
-iterator pairs*(inventory: Inventory): (Sku, lent Product) =
-  for idx, sku in inventory.ids:
-    yield (sku, inventory.products[idx])
-
-let hammer = Sku("hammer")
-var inventory: Inventory
-inventory.add hammer, initProduct("Hammer", ["tool"], 4)
-doAssert inventory.find(hammer) == 0
-doAssert inventory.contains(hammer)
-doAssert inventory.product(hammer).name == "Hammer"
-doAssert inventory.getOrDefault(Sku("missing"),
-  initProduct("Fallback", [], 0)).name == "Fallback"
-inventory.labels(hammer).add "steel"
-inventory.setStock(hammer, 6)
-doAssert inventory.product(hammer).labels.len == 2
-doAssert inventory.product(hammer).stock == 6
-for sku, product in inventory.pairs:
-  doAssert sku == hammer
-  doAssert product.name == "Hammer"
-inventory.del hammer
-inventory.del hammer
-doAssert inventory.find(hammer) == -1
-inventory.clear()
-doAssert inventory.find(hammer) == -1
+iterator pairs*(inv: Inventory): (Sku, lent Product) =
+  for idx, sku in inv.ids:
+    yield (sku, inv.products[idx])
 ```
 
 ## Key points

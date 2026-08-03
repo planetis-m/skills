@@ -36,8 +36,9 @@ proc `=copy`*(dest: var Wrapper; src: Wrapper) =
   dest.rc = src.rc
 
 proc create(s: string): Wrapper =
-  Wrapper(obj: createObj(cstring(s)),
-          rc: cast[ptr int](alloc0(sizeof(int))))
+  result = Wrapper(
+    obj: createObj(cstring(s)),
+    rc: cast[ptr int](alloc0(sizeof(int))))
 ```
 
 Key points:

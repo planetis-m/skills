@@ -9,19 +9,19 @@ type
   ParseOutcome = object
     ok: bool
     value: float
-    errorMsg: string
+    msg: string
 
   BatchResult = object
     succeeded: int
     failed: int
     outcomes: seq[ParseOutcome]
 
-proc appendLog(logPath: string; line: string) =
-  let f = open(logPath, fmAppend)
+proc appendLog(path: string; line: string) =
+  let f = open(path, fmAppend)
   f.writeLine(line)
   f.close()
 
-proc runBatch(inputs: seq[string]; logPath: string): BatchResult =
+proc runBatch(inputs: seq[string]; path: string): BatchResult =
   for input in inputs:
     try:
       let value = parseFloat(input)
@@ -29,8 +29,8 @@ proc runBatch(inputs: seq[string]; logPath: string): BatchResult =
       inc result.succeeded
     except ValueError:
       let msg = getCurrentExceptionMsg()
-      appendLog(logPath, input & ": " & msg)
-      result.outcomes.add ParseOutcome(ok: false, errorMsg: msg)
+      appendLog(path, input & ": " & msg)
+      result.outcomes.add ParseOutcome(ok: false, msg: msg)
       inc result.failed
 ```
 

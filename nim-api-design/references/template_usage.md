@@ -47,13 +47,6 @@ proc process(data: openArray[int]) =
 var users = {1: "alice", 2: "bob"}.toTable
 users.withValue(1, u):
   u[] = "ALICE"
-doAssert users[1] == "ALICE"
-
-incrementLocked()
-doAssert counter == 1
-
-process([10, 20, 30])
-doAssert counter == 61
 ```
 
 ## Key points

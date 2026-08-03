@@ -4,43 +4,32 @@ session whose shared identity is part of the contract.
 ```nim
 type
   EncoderOptions* = object
-    encoderQuality: int
-    encoderFormat: string
+    quality: int
+    format: string
 
   EncoderSession* = ref object
     options: EncoderOptions
-    encodedFrames: int
+    frames: int
 
 proc initEncoderOptions*(quality: range[1..100] = 80;
     format = "png"): EncoderOptions =
-  EncoderOptions(encoderQuality: quality, encoderFormat: format)
+  EncoderOptions(quality: quality, format: format)
 
 proc newEncoderSession*(
     options = initEncoderOptions()): EncoderSession =
   EncoderSession(options: options)
 
-func quality*(session: EncoderSession): int =
-  session.options.encoderQuality
+func quality*(s: EncoderSession): int {.inline.} =
+  s.options.quality
 
-func quality*(options: EncoderOptions): int =
-  options.encoderQuality
+func quality*(o: EncoderOptions): int {.inline.} =
+  o.quality
 
-func format*(options: EncoderOptions): string =
-  options.encoderFormat
+func format*(o: EncoderOptions): string {.inline.} =
+  o.format
 
-proc recordFrame*(session: EncoderSession) =
-  inc session.encodedFrames
-
-let defaults = initEncoderOptions()
-let custom = initEncoderOptions(95)
-doAssert defaults.quality == 80
-doAssert defaults.format == "png"
-
-let session = newEncoderSession(custom)
-let alias = session
-alias.recordFrame()
-doAssert session.encodedFrames == 1
-doAssert session.quality == 95
+proc recordFrame*(s: EncoderSession) =
+  inc s.frames
 ```
 
 ## Key points

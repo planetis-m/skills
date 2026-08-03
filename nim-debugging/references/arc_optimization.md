@@ -11,14 +11,14 @@ type
 
   FileEntries = array[3, FileEntry]
 
-proc drainByCopy(source: var FileEntries; dest: var FileEntries) =
+proc drainByCopy(src: var FileEntries; dest: var FileEntries) =
   for i in 0..high(dest):
-    dest[i] = source[i]
-    source[i] = default(FileEntry)
+    dest[i] = src[i]
+    src[i] = default(FileEntry)
 
-proc drainByMove(source: var FileEntries; dest: var FileEntries) =
+proc drainByMove(src: var FileEntries; dest: var FileEntries) =
   for i in 0..high(dest):
-    dest[i] = move(source[i])
+    dest[i] = move(src[i])
 
 proc sampleEntries(): FileEntries =
   result = [
@@ -47,7 +47,7 @@ nim c --expandArc:drainByCopy --expandArc:drainByMove example.nim
 ```
 
 `drainByCopy` contains `=copy` followed by clearing the source. `drainByMove`
-contains `=sink(dest[i], move(source[i]))`; moving already leaves the source
+contains `=sink(dest[i], move(src[i]))`; moving already leaves the source
 element in its default state.
 
 Use `move` only when the operation transfers ownership and the source element

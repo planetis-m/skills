@@ -12,8 +12,8 @@ type
 
   ScanSummary* = object
     workspace*: WorkspaceId
-    matchedPaths*: seq[string]
-    skippedCount*: int
+    paths*: seq[string]
+    skipped*: int
 
 proc `==`*(a, b: WorkspaceId): bool {.borrow.}
 proc `$`*(id: WorkspaceId): string {.borrow.}
@@ -26,26 +26,17 @@ proc initScanOptions*(extension = ".nim"; includeHidden = false;
     maxDepth: maxDepth
   )
 
-proc scan*(workspace: WorkspaceId;
+proc scan*(ws: WorkspaceId;
     options = initScanOptions()): ScanSummary =
-  if $workspace == "":
+  if $ws == "":
     raise newException(ValueError, "workspace is empty")
 
   result = ScanSummary(
-    workspace: workspace,
-    matchedPaths: @["src/app.nim", "tests/app_test.nim"]
+    workspace: ws,
+    paths: @["src/app.nim", "tests/app_test.nim"]
   )
   if options.includeHidden:
-    result.matchedPaths.add ".config/plugin.nim"
-
-let workspace = WorkspaceId("compiler")
-let normal = scan(workspace)
-doAssert normal.workspace == workspace
-doAssert normal.matchedPaths.len == 2
-
-let hidden = scan(workspace,
-  initScanOptions(includeHidden = true, maxDepth = 3))
-doAssert hidden.matchedPaths.len == 3
+    result.paths.add ".config/plugin.nim"
 ```
 
 ## Key points

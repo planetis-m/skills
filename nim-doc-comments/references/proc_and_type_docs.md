@@ -42,7 +42,7 @@ type
 type
   RequestContext* = object ## Parsed request with validated headers and route parameters.
     headers*: HttpHeaders ## Request headers.
-    routeParams*: Table[string, string] ## Decoded route parameters.
+    params*: Table[string, string] ## Decoded route parameters.
 ```
 
 ## Const docs

@@ -28,7 +28,7 @@ proc newHandle*(width, height: int): Handle =
   let raw = LIB_Create(cint width, cint height)
   if raw == nil:
     raise newException(ValueError, "Failed to create handle")
-  Handle(raw: raw)
+  result = Handle(raw: raw)
 ```
 
 ## Key points

@@ -17,8 +17,8 @@ description: Design clear Nim error-handling flows; when to raise exceptions vs 
 ### Add Only Real Failure Paths
 
 - Read what the current operation promises and how each called API reports failure.
-- If a successful call guarantees valid output, do not add another nil, size, or range check.
-- If a condition breaks no documented promise, remove the check and document the valid behavior.
+- If a successful call guarantees valid output, do not add another raising nil, size, or range check.
+- If a condition breaks no documented promise, remove the raising check and document the valid behavior.
 - Report failure when the result cannot safely satisfy its API or the operation cannot meet its documented promise.
 - If an operation requires a stronger guarantee than the API it calls, validate that guarantee in that operation.
 
@@ -36,7 +36,9 @@ description: Design clear Nim error-handling flows; when to raise exceptions vs 
 - Catch `CatchableError` only when the boundary handles every recoverable error. Do not catch bare `Exception`.
 - Add a custom exception only when callers handle it differently. Derive it from the closest existing `CatchableError` subtype.
 - Do not use `Defect` for recoverable failures; it represents a programming bug and is not caught by `CatchableError`.
-- Do not use range conversions for recoverable validation; invalid values raise `RangeDefect`.
+- Use `assert` for conditions whose failure means a programming bug: preconditions, internal invariants, and state guards,
+  as in `assert s.opened, "next called before open"`.
+- Do not use range conversions for recoverable validation, e.g. `Positive(parseInt(s))`; invalid values raise `RangeDefect`.
 
 ### Translate and Inspect Errors
 

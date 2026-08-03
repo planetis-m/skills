@@ -43,6 +43,9 @@ Choose the smallest structure that exposes the real workflow.
 - Export only the types and entry points callers need.
 - Keep orchestration state and helpers private unless another module is meant
   to use them.
+- Compile-time symbols persist for the whole compilation: one module's
+  `{.define: flag.}` silently changes what later modules see, so import order
+  decides `when defined(flag)`. `{.undef: flag.}` for modules that need it off.
 
 ## Control flow
 

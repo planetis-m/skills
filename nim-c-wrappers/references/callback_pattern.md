@@ -4,10 +4,10 @@ Minimal pattern for C callbacks in Nim.
 
 ```nim
 type
-  WriteCallback* = proc(buffer: ptr char, size: csize_t, nitems: csize_t,
+  WriteCallback* = proc(buf: ptr char, size: csize_t, nitems: csize_t,
     userdata: pointer): csize_t {.cdecl.}
 
-proc bodyWriteCb(buffer: ptr char, size: csize_t, nitems: csize_t,
+proc writeCb(buf: ptr char, size: csize_t, nitems: csize_t,
     userdata: pointer): csize_t {.cdecl.} =
   let total = int(size * nitems)
   if total <= 0:
@@ -19,7 +19,7 @@ proc bodyWriteCb(buffer: ptr char, size: csize_t, nitems: csize_t,
     else:
       let start = body[].len
       body[].setLen(start + total)
-      copyMem(addr body[][start], buffer, total)
+      copyMem(addr body[][start], buf, total)
       result = csize_t(total)
 ```
 
@@ -39,9 +39,9 @@ type
     fn: CallbackFn
     userdata: pointer
 
-proc makeCallback(state: CallbackState): proc(code: cint) =
+proc makeCallback(st: CallbackState): proc(code: cint) =
   result = proc(code: cint) =
-    state.total += int(code)
+    st.total += int(code)
 
 proc registerCallback(cb: proc(code: cint)): CallbackRegistration =
   result = CallbackRegistration(fn: cast[CallbackFn](rawProc(cb)), userdata: rawEnv(cb))

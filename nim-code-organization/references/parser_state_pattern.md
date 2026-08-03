@@ -8,31 +8,23 @@ type
     pos: int
     opened: bool
 
-proc open(scanner: var WordScanner; input: string) =
-  scanner = WordScanner(input: input, opened: true)
+proc open(s: var WordScanner; input: string) =
+  s = WordScanner(input: input, opened: true)
 
-proc skipSpaces(scanner: var WordScanner) =
-  while scanner.pos < scanner.input.len and scanner.input[scanner.pos] == ' ':
-    inc scanner.pos
+proc skipSpaces(s: var WordScanner) =
+  while s.pos < s.input.len and s.input[s.pos] == ' ':
+    inc s.pos
 
-proc next(scanner: var WordScanner): string =
-  doAssert scanner.opened
-  scanner.skipSpaces()
-  let start = scanner.pos
-  while scanner.pos < scanner.input.len and scanner.input[scanner.pos] != ' ':
-    inc scanner.pos
-  result = scanner.input[start..<scanner.pos]
+proc next(s: var WordScanner): string =
+  assert s.opened
+  s.skipSpaces()
+  let start = s.pos
+  while s.pos < s.input.len and s.input[s.pos] != ' ':
+    inc s.pos
+  result = s.input[start..<s.pos]
 
-proc close(scanner: var WordScanner) =
-  scanner = WordScanner()
-
-var scanner: WordScanner
-scanner.open("alpha beta")
-doAssert scanner.next() == "alpha"
-doAssert scanner.next() == "beta"
-doAssert scanner.next() == ""
-scanner.close()
-doAssert not scanner.opened
+proc close(s: var WordScanner) =
+  s = WordScanner()
 ```
 
 ## Key points
