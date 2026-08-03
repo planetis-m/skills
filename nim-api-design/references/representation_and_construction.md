@@ -16,8 +16,8 @@ proc initEncoderOptions*(quality: range[1..100] = 80;
   EncoderOptions(quality: quality, format: format)
 
 proc newEncoderSession*(
-    options = initEncoderOptions()): EncoderSession =
-  EncoderSession(options: options)
+    opts = initEncoderOptions()): EncoderSession =
+  EncoderSession(options: opts)
 
 func quality*(s: EncoderSession): int {.inline.} =
   s.options.quality

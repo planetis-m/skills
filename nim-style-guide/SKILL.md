@@ -18,17 +18,21 @@ description: Write clear, consistent Nim code in a simple stdlib-aligned style, 
   `range[0..<n]` is invalid.
 - Indent wrapped declarations, calls, and conditions one extra level.
 
-## Imports And Naming
+## Imports
 
 - Use `std/...` imports for stdlib modules.
 - Group imports from the same directory: `import std/[a, b, c]`,
   `import lib/[x, y, z]`.
 - Use `from foo import bar, baz` when you only need a small API slice.
 - `import` brings symbols into scope without qualification.
+- `export` takes only the module name: `export baz`, not `export foo/bar/baz`.
 - Use qualified `module.symbol` access only to resolve genuine name conflicts between imported modules.
+
+## Naming
+
 - Types use `PascalCase`.
 - Procs, funcs, iterators, templates, vars, and fields use `camelCase`.
-- Constants may use `camelCase` or `PascalCase`.
+- Constants default to `PascalCase`; `camelCase` is also allowed.
 - Use `ALL_UPPERCASE` only when preserving names from a C or C++ wrapper.
 - Use normal word casing such as `parseUrl` and `httpStatus`.
 - Do not stutter the type name into its fields; `Product.name`, not `Product.productName`.
@@ -43,7 +47,6 @@ description: Write clear, consistent Nim code in a simple stdlib-aligned style, 
 - Name domain predicates subject-first, as in `fileExists`, not `existsFile`.
 - Use established stdlib names when behavior matches: `initX`, `newX`, `find`,
   `contains`, `add`, `cmp`, `len`, `cap`, `items`, `pairs`, `incl`, and `excl`.
-- Use `find` for a position and `contains` for a `bool`.
 - Name a cheap, side-effect-free field getter `foo`. Use `getFoo` when the
   operation has side effects or is not O(1).
 - Pair `foo` with `foo=` and `getFoo` with `setFoo`.
@@ -59,8 +62,7 @@ description: Write clear, consistent Nim code in a simple stdlib-aligned style, 
 - Use a nested proc when the logic is truly local or when you want a closure.
 - A nested proc may capture outer locals. If a nested proc must stay non-capturing, mark it `{.nimcall.}`.
 - Use `macro` only when syntax transformation is required.
-- Mark one-expression forwarders and field accessors `{.inline.}`. Skip it for constructors, loops,
-  and procs that raise.
+- Mark one-expression forwarders and field accessors `{.inline.}`.
 
 ## Calls, Locals, And Types
 
@@ -71,7 +73,7 @@ description: Write clear, consistent Nim code in a simple stdlib-aligned style, 
 - Use `var` only for values that mutate.
 - Keep local declarations close to first use.
 - Keep public and reusable types at module scope.
-- Group related fields with the same type when it improves readability.
+- Declare fields of the same type together, `x, y: int`.
 - Prefer object constructors (`TypeName(field: value)`) over field-by-field
   assignment into an uninitialized `result`.
 - Omit fields that should keep their declared defaults.

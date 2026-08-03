@@ -20,14 +20,14 @@ proc `$`*(id: WorkspaceId): string {.borrow.}
 
 proc initScanOptions*(extension = ".nim"; includeHidden = false;
     maxDepth: Natural = 0): ScanOptions =
-  ScanOptions(
+  result = ScanOptions(
     extension: extension,
     includeHidden: includeHidden,
     maxDepth: maxDepth
   )
 
 proc scan*(ws: WorkspaceId;
-    options = initScanOptions()): ScanSummary =
+    opts = initScanOptions()): ScanSummary =
   if $ws == "":
     raise newException(ValueError, "workspace is empty")
 
@@ -35,7 +35,7 @@ proc scan*(ws: WorkspaceId;
     workspace: ws,
     paths: @["src/app.nim", "tests/app_test.nim"]
   )
-  if options.includeHidden:
+  if opts.includeHidden:
     result.paths.add ".config/plugin.nim"
 ```
 
