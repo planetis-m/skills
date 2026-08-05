@@ -55,10 +55,16 @@ description: Design clear public Nim APIs for libraries and modules, including e
 
 ### Parameter ownership
 
-- Use `T` when the caller's variable stays unchanged, `var T` when the proc changes it, and
-  `sink T` when the proc takes ownership. Use `lent T` only for borrowed returns.
-- Pass sink arguments normally; Nim moves proven last-use values and copies otherwise. Use
-  `ensureMove(x)` only when copying must be a compile-time error.
+- Use `T` when the caller's variable stays unchanged, `var T` when the proc changes it, `sink T`
+  when the proc takes ownership, and `lent T` only for borrowed returns.
+- Pass sink arguments normally — do not wrap them in `move()` or `ensureMove()`. Last-use
+  auto-sink moves locals, their fields, tuple fields and indices, and direct-indexed seq/array
+  elements with no copy.
+- Use `move(x)` only where auto-sink does not apply: fields of `var` parameters, loop-indexed
+  seq/array elements (`requests[i]`), and values reused later in the same scope.
+- Use `ensureMove(x)` to make an accidental copy a compile-time error.
+- Measure copy/move behavior inside a named proc, not at module top level; last-use analysis does
+  not fire there. See `nim-debugging` for `--expandArc` and copy-counter diagnosis.
 
 ### Lookup surface
 
@@ -78,9 +84,10 @@ description: Design clear public Nim APIs for libraries and modules, including e
 ### Public boundary
 
 - Export only the stable surface. Keep helpers private.
+- Keep accessor-backed fields private, so external dot access routes to the
+  accessors; an exported field would bypass them.
 - Use descriptive public names.
-- In user code, gate version-specific API with `when (NimMajor, NimMinor) >= (x, y)`. Do not use
-  stdlib-internal `{.since.}`.
+- In user code, gate version-specific API with `when (NimMajor, NimMinor) >= (x, y)`.
 - Keep template lookup escape hatches such as `withValue` secondary to the main lookup surface.
 
 ## Workflow

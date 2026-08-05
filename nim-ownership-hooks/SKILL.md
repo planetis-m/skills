@@ -68,11 +68,14 @@ Only templates may safely appear between the type definition and the hooks. If a
 
 ### Move semantics
 
-- For an explicit transfer that must not copy, use `ensureMove(x)`; it fails at compile time if the move cannot be proved.
-- Use `move(x)` only to force a move that last-use analysis cannot prove.
 - `sink` parameters are affine, not linear: the callee may consume the value once, or not at all.
-- Object and tuple fields are separate entities for sink last-use analysis.
-- When the compiler cannot prove a sink argument is last use, it inserts `=copy` or `=dup` before passing.
+- When the compiler cannot prove a sink argument is last use, it inserts `=copy` or `=dup` before
+  passing. See `nim-api-design` for the caller-facing rules on when `move()` is required.
+- `move(x)` leaves the source alive and moved-from; the source's `=destroy` still runs.
+- `ensureMove(x)` makes the source dead: later use is a compile error, and the source's
+  `=destroy` is skipped. Use it for return positions and must-fail-instead-of-copy cases, not
+  routine sink arguments.
+- `=wasMoved(x)` followed by `=destroy(x)` cancel: the destroy is eliminated.
 
 ### Edge cases
 

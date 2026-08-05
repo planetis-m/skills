@@ -21,8 +21,7 @@ description: Write clear, consistent Nim code in a simple stdlib-aligned style, 
 ## Imports
 
 - Use `std/...` imports for stdlib modules.
-- Group imports from the same directory: `import std/[a, b, c]`,
-  `import lib/[x, y, z]`.
+- Group imports from the same directory: `import std/[a, b, c]`, `import lib/[x, y, z]`.
 - Use `from foo import bar, baz` when you only need a small API slice.
 - `import` brings symbols into scope without qualification.
 - `export` takes only the module name: `export baz`, not `export foo/bar/baz`.
@@ -47,9 +46,10 @@ description: Write clear, consistent Nim code in a simple stdlib-aligned style, 
 - Name domain predicates subject-first, as in `fileExists`, not `existsFile`.
 - Use established stdlib names when behavior matches: `initX`, `newX`, `find`,
   `contains`, `add`, `cmp`, `len`, `cap`, `items`, `pairs`, `incl`, and `excl`.
-- Name a cheap, side-effect-free field getter `foo`. Use `getFoo` when the
-  operation has side effects or is not O(1).
+- Name a cheap, side-effect-free field getter `foo`. Use `getFoo` when the operation has side
+  effects or is not O(1).
 - Pair `foo` with `foo=` and `getFoo` with `setFoo`.
+- Accessors may share the field's name, no collision.
 
 ## Proc, Func, Template, Macro
 
@@ -74,9 +74,11 @@ description: Write clear, consistent Nim code in a simple stdlib-aligned style, 
 - Keep local declarations close to first use.
 - Keep public and reusable types at module scope.
 - Group related fields with the same type when it improves readability.
-- Prefer object constructors (`TypeName(field: value)`) over field-by-field
-  assignment into an uninitialized `result`.
+- Initialize `result` explicitly; prefer object constructors
+  (`TypeName(field: value)`) over field-by-field assignment.
 - Omit fields that should keep their declared defaults.
+- `T()` works only for objects; arrays use `arrayWith`, tuples use literals,
+  strings/seqs use `""`/`@[]`, `default(T)` as fallback.
 
 ## Parsing-Sensitive Whitespace
 
@@ -124,7 +126,7 @@ See `references/multiline_strings.md`.
 
 - Use structured control flow.
 - If the body is exactly one expression, end with that expression, as in `func len(b: Bag): int = b.items.len`
-- Otherwise build the return value in `result` at the end of the body — one assignment, or one per branch.
+- Otherwise assign the return value to `result` explicitly: at the start, at the end, or once per branch.
 - When a loop finds the return value, return it directly instead of using a flag.
 - Do not use `continue`. Put the remaining loop body inside a condition.
 
