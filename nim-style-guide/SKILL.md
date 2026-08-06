@@ -126,7 +126,8 @@ See `references/multiline_strings.md`.
 
 - Use structured control flow.
 - If the body is exactly one expression, end with that expression, as in `func len(b: Bag): int = b.items.len`
-- Otherwise assign the return value to `result` explicitly: at the start, at the end, or once per branch.
+- Otherwise assign the return value to `result` explicitly: as a default at the start, at the end, or once per branch.
+- A default set at the start may be overridden by the branch that produces the value.
 - When a loop finds the return value, return it directly instead of using a flag.
 - Do not use `continue`. Put the remaining loop body inside a condition.
 
