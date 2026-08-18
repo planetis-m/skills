@@ -12,74 +12,68 @@ Choose the smallest structure that exposes the real workflow.
 ## State ownership
 
 - Use ordinary locals when a workflow fits clearly in one proc.
-- When several steps share evolving state or invariants, collect that state in
+- When independently meaningful operations must preserve one invariant, collect that state in
   a named object and pass it explicitly.
 - Start with a plain `object` passed by `var`.
-- Choose `ref object` when identity, aliasing, or shared lifetime is part of
-  the design.
+- Choose `ref object` when identity, aliasing, or shared lifetime is part of the design.
 - Make shared mutation visible in proc parameters and field updates.
 
 ## Helper placement
 
-- Extract a helper when it names a meaningful step, is reused, isolates a
-  contract, or makes an invariant easier to state.
-- To share an implementation across compile-time variants, parameterize one
-  helper with `static[bool]` or a static enum and branch with `when`.
-- Keep a short, one-use sequence in its driver when extraction would only move
-  lines elsewhere.
-- Put helpers at module scope when several phases use them or they stand on
-  their own.
-- Use a nested proc for logic local to one caller or for an intentional
-  closure.
-- A nested proc captures outer locals by default. Mark it `{.nimcall.}` when
-  its non-capturing calling convention is required.
+- Extract a helper when it names a meaningful step, is reused, isolates a contract, or makes
+  an invariant easier to state.
+- To share an implementation across compile-time variants, parameterize one helper with 
+  `static[bool]` or a static enum and branch with `when`.
+- Keep a short, one-use sequence in its driver when extraction would only move lines elsewhere.
+- Put helpers at module scope when several phases use them or they stand on their own.
+- Use a nested proc for logic local to one caller or for an intentional closure.
+- A nested proc captures outer locals by default. Mark it `{.nimcall.}` when its non-capturing
+  calling convention is required.
 
 ## Module boundaries
 
-- Give each module one cohesive responsibility and public contract. A module
-  may own several related types or pieces of state.
-- Split a module when a part has an independent responsibility, dependency
-  set, lifecycle, or reuse boundary.
+- Give each module one cohesive responsibility and public contract. A module may own several
+  related types or pieces of state.
+- Split a module when a part has an independent responsibility, dependency set, lifecycle,
+  or reuse boundary.
 - Export only the types and entry points callers need.
-- Keep orchestration state and helpers private unless another module is meant
-  to use them.
-- Do not use `{.define.}`/`{.undef.}` to scope behavior across modules; use a
-  runtime parameter.
+- Keep orchestration state and helpers private unless another module is meant to use them.
+- Do not use `{.define.}`/`{.undef.}` to scope behavior across modules; use a runtime parameter.
 
 ## Control flow
 
 - Keep the normal path structured so its invariants remain visible.
-- For a closed set of behaviors, represent the kind as data and branch with
-  `case`.
-- Use `method` when runtime subtype dispatch is part of the design, rather than
-  as the default way to divide orchestration steps.
+- For a closed set of behaviors, represent the kind as data and branch with `case`.
+- Use `method` when runtime subtype dispatch is part of the design, rather than as the default
+  way to divide orchestration steps.
 
-## Stateful module pattern
+## Incremental APIs
 
-- For an incremental lifecycle, consider the stdlib parser shape: one state
-  object, top-level `open`/`next`/`close`-style procs, and private helpers that
-  mutate `var State`.
-- Keep lifecycle transitions explicit; each operation should make its state
-  requirements and effects apparent.
+- When the caller drives consumption piecewise, keep the cursor and lifecycle state in
+  the object's fields so it survives between calls.
+- Expose one proc per transition, with `open`/`close`-style lifecycle procs only when a
+  resource or ordering constraint spans calls; keep a one-shot operation a single proc.
+- Enforce that ordering with an assert on the lifecycle field (for example
+  `assert s.opened`) at the start of each `next`-style proc.
 
 # Workflow
 
 1. Trace the data flow.
-   Identify which values evolve, which steps share them, and which invariants
-   must hold between steps.
+   Identify which values evolve, which steps share them, and which invariants must hold
+   between steps.
 2. Choose the smallest state scope.
-   Use locals for one clear proc, a plain object for shared multi-step state,
+   Use locals for one clear proc, a plain object for operations preserving one invariant,
    and a reference only for intentional identity or shared lifetime.
 3. Shape the helpers.
    Extract meaningful operations. Keep local incidental logic near its caller.
 4. Choose module boundaries.
-   Group code by responsibility and contract, then split only at a real
-   dependency, lifecycle, or reuse boundary.
+   Group code by responsibility and contract, then split only at a real dependency,
+   lifecycle, or reuse boundary.
 5. Define the public surface.
    Export the minimum caller-facing types and operations.
 6. Choose dispatch.
-   Use direct calls and `case` for closed behavior. Introduce runtime dispatch
-   for an open subtype-based design.
+   Use direct calls and `case` for closed behavior. Introduce runtime dispatch for an open
+   subtype-based design.
 
 ## State Scope
 
@@ -105,7 +99,6 @@ Choose the smallest structure that exposes the real workflow.
 
 ## References
 
-- `references/orchestration_pattern.md` — Local versus explicit state for operations that share
-  invariants.
-- `references/parser_state_pattern.md` — A scanner object for incremental cursor and lifecycle
-  state.
+- `references/orchestration_pattern.md` — Inventory reservations across independent operations
+  that share a stock invariant, contrasted with a local calculation.
+- `references/parser_state_pattern.md` — A scanner object for incremental cursor and lifecycle state.

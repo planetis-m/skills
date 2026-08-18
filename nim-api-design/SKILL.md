@@ -31,8 +31,10 @@ description: Design clear public Nim APIs for libraries and modules, including e
 - Use range types for constrained public parameters; store their values in the underlying type
   (`int` for `Natural` or `Positive`).
 - Pass arguments directly to range parameters; conversion is implicit, so do not write `Positive(x)`.
-- When an enum's string form is part of the public contract, set explicit strings
-  (`dirNorth = "north"`) so `$` and `parseEnum[T]` round-trip.
+- Model closed choice sets as enums; add reserved members for future assignments in bounded
+  protocol code spaces; use strings for open-ended or externally extensible token namespaces.
+- When an enum's string spelling is dictated by an external format or protocol, set
+  explicit strings (`dirNorth = "north"`); `$` and `parseEnum[T]` always round-trip.
 - Use `static[T]` in public APIs only when callers must supply a compile-time constant.
 - Bare `typedesc` parameters may name different types; share `T` across `typedesc[T]` parameters
   when they must match.
@@ -45,26 +47,29 @@ description: Design clear public Nim APIs for libraries and modules, including e
 
 - Use `initX()` for value types that copy by value.
 - Use `newX()` for ref types and for value types with reference semantics.
-- Use one `toX()` name for common conversions. Overload on input type.
-- Use `openArray[T]` only at a public boundary that must accept both arrays and seqs.
-  When you control the callers, name the concrete type (`array[N, T]` or `seq[T]`).
-- Choose sequence-like batch parameters by required operation: `openArray[T]` for read-only
-  traversal, `var openArray[T]` for fixed-length element mutation, and `var seq[T]` for resizing
-  or replacement.
-- Keep the zero-argument path simple with sensible defaults.
+- Use one `toX()` name for common conversions. Overload on input type. Do not define converters.
+- Use default parameter values for optional constructor arguments, keeping the no-argument call
+  the main path.
+
+### Sequence parameters
+
+- When a parameter must accept both arrays and seqs, use `openArray[T]` for read-only
+  traversal or `var openArray[T]` for fixed-length element mutation.
+- Resizing or replacement requires `var seq[T]`: an `openArray` is fixed-length.
+- When you control the callers, name the concrete type (`array[N, T]` or `seq[T]`) 
+  instead of `openArray[T]`.
 
 ### Parameter ownership
 
 - Use `T` when the caller's variable stays unchanged, `var T` when the proc changes it, `sink T`
   when the proc takes ownership, and `lent T` only for borrowed returns.
+- Passing `x: T` never copies what `x` points to. Do not use `ptr T` or `addr x` to avoid a copy.
 - Pass sink arguments normally — do not wrap them in `move()` or `ensureMove()`. Last-use
   auto-sink moves locals, their fields, tuple fields and indices, and direct-indexed seq/array
   elements with no copy.
 - Use `move(x)` only where auto-sink does not apply: fields of `var` parameters, loop-indexed
-  seq/array elements (`requests[i]`), and values reused later in the same scope.
+  seq/array elements (`arr[i]`), and values reused later in the same scope.
 - Use `ensureMove(x)` to make an accidental copy a compile-time error.
-- Measure copy/move behavior inside a named proc, not at module top level; last-use analysis does
-  not fire there. See `nim-debugging` for `--expandArc` and copy-counter diagnosis.
 
 ### Lookup surface
 

@@ -36,8 +36,7 @@ description: Write clear, consistent Nim code in a simple stdlib-aligned style, 
 - Use normal word casing such as `parseUrl` and `httpStatus`.
 - Do not stutter the type name into its fields; `Product.name`, not `Product.productName`.
 - Use short names for parameters and locals that echo the type, as in `inv: Inventory` or `s: Session`.
-- Give the most-used representation the base type name. Suffix the others with
-  `Obj`, `Ref`, or `Ptr`.
+- Give the most-used representation the base type name. Suffix the others with `Obj`, `Ref`, or `Ptr`.
 - Suffix catchable exception types with `Error` and programming-bug defect types with `Defect`.
 - For non-pure enums, prefix values such as `pcFile`. For pure enums, use `PascalCase`.
 - Prefix mutable views with `m`, as in `mitems` and `mpairs`.
@@ -69,6 +68,7 @@ description: Write clear, consistent Nim code in a simple stdlib-aligned style, 
 - Prefer compact wrapped calls over one-argument-per-line call blocks.
 - Use UFCS when it reads like an accessor.
 - Write `typeof(x)`, not the historical `type(x)`.
+- Write enum values unqualified (`north`, not `Direction.north`); qualify only on ambiguity.
 - Use `let` by default.
 - Use `var` only for values that mutate.
 - Keep local declarations close to first use.
@@ -127,7 +127,7 @@ See `references/multiline_strings.md`.
 - Use structured control flow.
 - If the body is exactly one expression, end with that expression, as in `func len(b: Bag): int = b.items.len`
 - Otherwise assign the return value to `result` explicitly: as a default at the start, at the end, or once per branch.
-- A default set at the start may be overridden by the branch that produces the value.
+- A default `result` may be overridden by the branch that produces the value.
 - When a loop finds the return value, return it directly instead of using a flag.
 - Do not use `continue`. Put the remaining loop body inside a condition.
 
@@ -154,6 +154,7 @@ See `references/multiline_strings.md`.
 | Hiding reusable helpers inside another proc | It makes the helper harder to reuse and easier to turn into an accidental closure. |
 | Writing one argument per line by default | It adds vertical noise without adding structure. |
 | Using `var` for values that never mutate | It hides which locals actually change. |
+| Assuming `{.pure.}` requires `Type.value` | Pure enum values may be unqualified. |
 | Turning every branch into an early `return` in a multi-step proc | It makes the normal path harder to scan. |
 | Using `continue` | A structured branch keeps the loop invariant visible. |
 

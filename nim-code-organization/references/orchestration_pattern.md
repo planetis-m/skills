@@ -1,32 +1,43 @@
-Choose local variables for a self-contained calculation and explicit state when
-several operations share an invariant.
+Use explicit inventory state when reservation operations must preserve stock across calls.
 
 ```nim
 type
-  ReportState = object
-    accepted: int
-    rejected: int
-    messages: seq[string]
+  InventoryState = object
+    onHand: int
+    reserved: int
 
-proc recordAccepted(st: var ReportState; name: string) =
-  inc st.accepted
-  st.messages.add "accepted " & name
+func initInventory(onHand: int): InventoryState =
+  InventoryState(onHand: max(onHand, 0))
 
-proc recordRejected(st: var ReportState; name: string) =
-  inc st.rejected
-  st.messages.add "rejected " & name
+func available(state: InventoryState): int =
+  state.onHand - state.reserved
 
-proc buildReport(names: openArray[string]): seq[string] =
-  var state: ReportState
-  for name in names:
-    if name.len > 0:
-      state.recordAccepted(name)
-    else:
-      state.recordRejected("<empty>")
+proc ensure(state: InventoryState) =
+  assert state.reserved >= 0 and state.reserved <= state.onHand
 
-  result = state.messages
-  result.add "accepted " & $state.accepted
-  result.add "rejected " & $state.rejected
+proc restock(state: var InventoryState; quantity: int) =
+  if quantity > 0:
+    inc state.onHand, quantity
+    ensure state
+
+proc reserve(state: var InventoryState; quantity: int): bool =
+  if quantity > 0 and quantity <= state.available:
+    inc state.reserved, quantity
+    ensure state
+    result = true
+
+proc cancelReservation(state: var InventoryState; quantity: int): bool =
+  if quantity > 0 and quantity <= state.reserved:
+    dec state.reserved, quantity
+    ensure state
+    result = true
+
+proc shipReserved(state: var InventoryState; quantity: int): bool =
+  if quantity > 0 and quantity <= state.reserved:
+    dec state.reserved, quantity
+    dec state.onHand, quantity
+    ensure state
+    result = true
 
 proc countNonEmpty(names: openArray[string]): int =
   for name in names:
@@ -36,9 +47,5 @@ proc countNonEmpty(names: openArray[string]): int =
 
 ## Key points
 
-- `countNonEmpty` is linear and needs no state type.
-- `ReportState` is useful because multiple operations maintain related counts
-  and messages.
-- The object exposes shared mutation without introducing reference identity.
-- Extract state and helpers because they express invariants, not merely to
-  shorten the driver.
+- The operations preserve `0 <= reserved <= onHand` across calls.
+- `countNonEmpty` is self-contained, so its result is sufficient local state.

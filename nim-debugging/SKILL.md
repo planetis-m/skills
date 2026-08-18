@@ -74,6 +74,8 @@ Default build behavior:
   and destroy operations.
 - Keep an `--expandArc` target reachable from the entry point and use the
   target project's `--mm:` mode.
+- Measure copy behavior inside a named proc; last-use analysis does not fire at
+  module top level.
 - Treat expansion output as evidence about generated operations, not as a
   reason to optimize by itself. `move` is destructive and requires deliberate
   last use plus behavior tests.
