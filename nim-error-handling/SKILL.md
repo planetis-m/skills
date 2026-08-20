@@ -13,6 +13,7 @@ description: Design clear Nim error-handling flows; when to raise exceptions vs 
 - Return `Option[T]` when success returns a value but absence is expected.
 - Use `bool` with a `var` parameter only when filling or mutating caller-owned storage is part of the API.
 - Convert per-item failures into structured outcomes at the batch boundary. Keep intermediate steps exception-based.
+- Treat a failed condition as either recoverable or a programming bug, never both.
 
 ### Add Only Real Failure Paths
 
@@ -36,15 +37,12 @@ description: Design clear Nim error-handling flows; when to raise exceptions vs 
 - Catch `CatchableError` only when the boundary handles every recoverable error. Do not catch bare `Exception`.
 - Add a custom exception only when callers handle it differently. Derive it from the closest existing `CatchableError` subtype.
 - Do not use `Defect` for recoverable failures; it represents a programming bug and is not caught by `CatchableError`.
-- Use `assert` for conditions whose failure means a programming bug: preconditions, internal invariants, and state guards,
-  as in `assert s.opened, "next called before open"`.
+- Use `assert` for conditions whose failure means a programming bug: preconditions, internal invariants, and state guards.
 - Do not use range conversions for recoverable validation, e.g. `Positive(parseInt(s))`; invalid values raise `RangeDefect`.
 
-### Translate and Inspect Errors
+### Translate Errors
 
 - Translate errors only at module or subsystem boundaries. Add local context and preserve the original reason.
-- If the handler only needs the message text, use `getCurrentExceptionMsg()`.
-- If the handler needs exception fields, use `except X as e`.
 
 ### Cleanup and Contracts
 
