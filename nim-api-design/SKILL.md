@@ -71,6 +71,11 @@ description: Design clear public Nim APIs for libraries and modules, including e
   loop-indexed seq/array elements (`arr[i]`), and values reused later in the same scope.
 - Use `ensureMove(x)` to make an accidental copy a compile-time error.
 
+### Template parameters
+
+- Treat template parameters as syntax substituted into the template body. Design them around the
+  expressions, names, types, or statement blocks the caller must provide—not like proc parameters.
+
 ### Lookup surface
 
 - Separate required lookup from optional lookup.

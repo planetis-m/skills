@@ -68,6 +68,7 @@ description: Write clear, consistent Nim code in a simple stdlib-aligned style, 
 - Prefer compact wrapped calls over one-argument-per-line call blocks.
 - Use UFCS when it reads like an accessor.
 - Write `typeof(x)`, not the historical `type(x)`.
+- Write `addr x`, not the deprecated `unsafeAddr x`.
 - Write enum values unqualified (`north`, not `Direction.north`); qualify only on ambiguity.
 - Use `let` by default.
 - Use `var` only for values that mutate.

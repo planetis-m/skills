@@ -29,7 +29,7 @@ proc decodeFrame(input: openArray[byte]; frame: var Frame): bool =
       frame.kind = input[0]
       frame.payload = newSeq[byte](payloadLen)
       if payloadLen > 0:
-        copyMem(addr frame.payload[0], unsafeAddr input[2], payloadLen)
+        copyMem(addr frame.payload[0], addr input[2], payloadLen)
 
 proc processFrame(input: openArray[byte]) =
   var frame: Frame
@@ -65,7 +65,7 @@ proc encodeFrame(
     data[0] = frame.kind
     data[1] = byte(frame.payload.len)
     if frame.payload.len > 0:
-      copyMem(addr data[2], unsafeAddr frame.payload[0], frame.payload.len)
+      copyMem(addr data[2], addr frame.payload[0], frame.payload.len)
     result = frame.payload.len + 2
 
 proc testOneInput(data: ptr UncheckedArray[byte], len: int): cint {.

@@ -19,7 +19,8 @@ description: Document exported Nim modules and APIs with doc comments that `nim 
 
 ### Visibility
 
-- Only exported symbols (`*`) appear in rendered docs. Non-exported symbols are hidden.
+- Use `##` doc comments for exported symbols and `#` comments for private implementation details.
+  Non-exported symbols do not appear in rendered docs.
 
 ### runnableExamples
 

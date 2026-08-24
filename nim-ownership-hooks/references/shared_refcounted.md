@@ -12,13 +12,13 @@ type
     obj: ptr Obj
     rc: ptr int
 
-proc `=destroy`*(dest: Wrapper) =
-  if dest.obj != nil:
-    if dest.rc[] == 0:
-      dealloc(dest.rc)
-      destroyObj(dest.obj)
+proc `=destroy`*(x: Wrapper) =
+  if x.obj != nil:
+    if x.rc[] == 0:
+      dealloc(x.rc)
+      destroyObj(x.obj)
     else:
-      dec dest.rc[]
+      dec x.rc[]
 
 proc `=wasMoved`*(dest: var Wrapper) =
   dest.obj = nil
@@ -29,11 +29,11 @@ proc `=dup`*(src: Wrapper): Wrapper =
   result.obj = src.obj
   result.rc = src.rc
 
-proc `=copy`*(dest: var Wrapper; src: Wrapper) =
+proc `=copy`*(dst: var Wrapper; src: Wrapper) =
   if src.obj != nil: inc src.rc[]
-  `=destroy`(dest)
-  dest.obj = src.obj
-  dest.rc = src.rc
+  `=destroy`(dst)
+  dst.obj = src.obj
+  dst.rc = src.rc
 
 proc create(s: string): Wrapper =
   result = Wrapper(
@@ -72,15 +72,14 @@ proc `=dup`*[T](src: SharedPtr[T]): SharedPtr[T] =
     discard fetchAdd(src.val.counter, 1, moRelaxed)
   result.val = src.val
 
-proc `=copy`*[T](dest: var SharedPtr[T]; src: SharedPtr[T]) =
+proc `=copy`*[T](dst: var SharedPtr[T]; src: SharedPtr[T]) =
   if src.val != nil:
     discard fetchAdd(src.val.counter, 1, moRelaxed)
-  `=destroy`(dest)
-  dest.val = src.val
+  `=destroy`(dst)
+  dst.val = src.val
 
 proc newSharedPtr*[T](val: sink Isolated[T]): SharedPtr[T] {.nodestroy.} =
-  result.val = cast[typeof(result.val)](
-    allocShared(sizeof(result.val[])))
+  result = SharedPtr[T](val: cast[typeof(result.val)](allocShared(sizeof(result.val[]))))
   result.val.counter.store(0, moRelaxed)
   result.val.value = extract val
 ```

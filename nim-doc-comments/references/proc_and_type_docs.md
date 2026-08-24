@@ -58,4 +58,3 @@ const
 - Proc docs go after the signature, before the body.
 - In `type`/`const` blocks, use inline trailing `##` on the declaration line.
 - Multi-line docs use continuation `##` lines aligned under the declaration.
-- Only exported symbols (`*`) appear in rendered output.

@@ -17,6 +17,8 @@ The compiler auto-manages destruction for primitives, `string`, `seq[T]`, `ref T
 
 Custom hooks are needed only for non-managed resources: raw pointers (`ptr T`) to manually allocated memory, OS file descriptors, socket handles, `distinct` types whose base has no hooks, or similar. `distinct` types whose base already has hooks lift them automatically.
 
+Export custom hooks for exported types.
+
 ### Hook-by-hook rules
 
 **`=destroy`**
@@ -26,7 +28,7 @@ Custom hooks are needed only for non-managed resources: raw pointers (`ptr T`) t
 - Use the signature `=destroy(x: T)`, not `var T`. Both compile, but `T` prevents accidental field mutation.
 
 **`=wasMoved`**
-- Reset every field that `=destroy` checks, so that `=destroy` becomes a no-op on the same variable. For pointer fields, set to `nil`.
+- Define a valid moved-from state. Reset only the fields needed by `=destroy` and the operations permitted in that state.
 - The compiler eliminates a `=destroy` call that follows `=wasMoved` on the same variable.
 
 **`=sink`**
@@ -117,6 +119,7 @@ Test these scenarios for every custom-hook type:
 - Copy independence (mutating copy does not affect original)
 - Dup independence
 - Destroy-after-move (destroy is a no-op)
+- Test every operation the type permits on a moved-from value
 - Self-copy (`x = x` does not crash)
 - Sink from temporaries
 - Zero-length initialization (if the type has constructors)
@@ -125,18 +128,10 @@ Test these scenarios for every custom-hook type:
 
 | Mistake | Why it is wrong |
 |---------|-----------------|
-| `=destroy` with `var T` | Both compile, but `T` prevents accidental field mutation inside the destructor. |
-| Setting fields to nil inside `=destroy` | Use `=wasMoved` for field reset. The compiler eliminates the subsequent destroy. |
-| Missing self-assignment guard in deep-copy `=copy` | Destroys source data before reading it. |
-| Self-assignment check in `=sink` | Compiler already eliminates simple `x = x`. The check is dead code. |
-| Missing `{.nodestroy.}` on raw-storage `=dup` | The compiler can run hooks on destination slots that do not hold valid values yet. |
-| Custom `=sink` when synthesized is fine | Adds unnecessary complexity with no benefit. |
-| `copyMem` in `=sink` or `=dup` | Bypasses child hook semantics and breaks the ownership chain for elements that have their own hooks. |
-| Missing zero-length guard | `alloc(0)` may return nil; subsequent indexing crashes. |
-| Using `move` when `ensureMove` would compile | Later reads of the source still compile and silently return its default value. |
-| `alloc` in multi-threaded code | Must use `allocShared`/`deallocShared` instead. |
-| Custom error string in `{.error: "msg"}` on `=copy` | The compiler ignores custom error messages. Use bare `{.error.}`. |
-| Skipping `=dup` on a move-only type | Add `=dup {.error.}`. Without it the compiler synthesizes one that produces nil instead of erroring. |
+| Setting fields to nil inside `=destroy` | Mixes resource release with moved-from state handling. |
+| Using `move` when `ensureMove` would compile | Accidental use after the move is not rejected. |
+| `alloc` in multi-threaded code | Cross-thread ownership may access storage through the wrong allocator. |
+| Skipping `=dup` on a move-only type | `=dup` can silently return a moved-from value instead of failing. |
 
 ## References
 
