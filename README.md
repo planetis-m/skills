@@ -20,6 +20,7 @@ Curated skill modules for AI-assisted Nim development and general tooling.
 | `nim-testing` | Block assertions, test runners, multi-config builds, sanitizers |
 | `atlas-package-cloner` | Atlas-managed Nim dependencies, lockfiles, overrides |
 | `nimonyplugins` | Nimony plugin `NifCursor`/`NifBuilder` traversal and construction |
+| `nimony-native-release` | `nimony n` release binaries, GitHub Releases, one-line installers |
 
 ## Install
 
